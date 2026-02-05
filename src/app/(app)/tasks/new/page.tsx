@@ -132,7 +132,7 @@ export default function NewTaskPage() {
   if (!canCreateTask) {
     return (
       <div className="text-center py-8">
-        <div className="text-red-600 mb-4">You don't have permission to create tasks.</div>
+        <div className="text-red-600 mb-4">You don&apos;t have permission to create tasks.</div>
         <Link href="/tasks" className="text-blue-600 hover:text-blue-800">
           Back to Tasks
         </Link>

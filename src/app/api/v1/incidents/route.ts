@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
     if (system) where.system = system
     if (environment) where.environment = environment.toUpperCase()
     if (tier) where.tier = tier.toUpperCase()

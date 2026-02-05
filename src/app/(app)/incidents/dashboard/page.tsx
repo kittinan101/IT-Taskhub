@@ -235,8 +235,9 @@ export default function IncidentDashboardPage() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value, percent }) => 
-                  `${name}: ${value} (${(percent * 100).toFixed(0)}%)`
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                label={(props: any) => 
+                  `${props.name}: ${props.value} (${((props.percent ?? 0) * 100).toFixed(0)}%)`
                 }
                 outerRadius={80}
                 fill="#8884d8"
@@ -315,7 +316,7 @@ export default function IncidentDashboardPage() {
             <YAxis />
             <Tooltip 
               labelFormatter={(value) => new Date(value).toLocaleDateString()}
-              formatter={(value, name) => [value, name === 'total' ? 'Total' : name.charAt(0).toUpperCase() + name.slice(1)]}
+              formatter={(value, name) => [value, name === 'total' ? 'Total' : (name ?? '').toString().charAt(0).toUpperCase() + (name ?? '').toString().slice(1)]}
             />
             <Legend />
             <Line 

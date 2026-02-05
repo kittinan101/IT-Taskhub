@@ -91,7 +91,7 @@ export async function PUT(
       }
     }
 
-    let updateData: any = {}
+    const updateData: Record<string, unknown> = {}
 
     // Update basic profile fields
     if (firstName !== undefined) updateData.firstName = firstName

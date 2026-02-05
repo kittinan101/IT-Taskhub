@@ -5,18 +5,19 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { TaskStatus, TaskPriority, Role } from "@prisma/client"
 
+interface Team {
+  id: string
+  name: string
+  color: string | null
+}
+
 interface User {
   id: string
   username: string
   firstName: string | null
   lastName: string | null
   role: Role
-}
-
-interface Team {
-  id: string
-  name: string
-  color: string | null
+  team?: Team | null
 }
 
 interface Task {
@@ -30,7 +31,6 @@ interface Task {
   completedAt: string | null
   creator: User
   assignee: User | null
-  team: Team | null
   _count: {
     comments: number
   }
@@ -81,7 +81,7 @@ export default function TasksPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  // const [showCreateModal, setShowCreateModal] = useState(false) // TODO: Implement create modal
   
   // Filters
   const [filters, setFilters] = useState({
@@ -108,7 +108,7 @@ export default function TasksPage() {
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
         ...Object.fromEntries(
-          Object.entries(filters).filter(([_, value]) => value)
+          Object.entries(filters).filter(([, value]) => value)
         )
       })
 
@@ -191,7 +191,7 @@ export default function TasksPage() {
   }
 
   const canCreateTask = session?.user?.role && ['ADMIN', 'PM', 'BA', 'DEVELOPER', 'QA'].includes(session.user.role)
-  const canDeleteTask = session?.user?.role && ['ADMIN', 'PM'].includes(session.user.role)
+  // const canDeleteTask = session?.user?.role && ['ADMIN', 'PM'].includes(session.user.role) // TODO: Implement delete functionality
 
   if (loading && tasks.length === 0) {
     return (
@@ -199,7 +199,7 @@ export default function TasksPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-            <p className="text-gray-600">Manage your team's tasks and assignments</p>
+            <p className="text-gray-600">Manage your team&apos;s tasks and assignments</p>
           </div>
         </div>
         <div className="text-center py-8">Loading tasks...</div>
@@ -213,7 +213,7 @@ export default function TasksPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-            <p className="text-gray-600">Manage your team's tasks and assignments</p>
+            <p className="text-gray-600">Manage your team&apos;s tasks and assignments</p>
           </div>
         </div>
         <div className="text-center py-8 text-red-600">Error: {error}</div>
@@ -226,7 +226,7 @@ export default function TasksPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-          <p className="text-gray-600">Manage your team's tasks and assignments</p>
+          <p className="text-gray-600">Manage your team&apos;s tasks and assignments</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="flex rounded-md shadow-sm">
@@ -382,13 +382,13 @@ export default function TasksPage() {
                           <div className="text-sm text-gray-500">
                             {task.description}
                           </div>
-                          {task.team && (
+                          {task.assignee?.team && (
                             <div className="flex items-center mt-1">
                               <span 
                                 className="w-2 h-2 rounded-full mr-1" 
-                                style={{ backgroundColor: task.team.color || '#3B82F6' }}
+                                style={{ backgroundColor: task.assignee.team.color || '#3B82F6' }}
                               ></span>
-                              <span className="text-xs text-gray-500">{task.team.name}</span>
+                              <span className="text-xs text-gray-500">{task.assignee.team.name}</span>
                             </div>
                           )}
                         </div>
@@ -402,7 +402,7 @@ export default function TasksPage() {
                           }`}
                           disabled={
                             !(['ADMIN', 'PM'].includes(session?.user?.role || '') ||
-                              task.creatorId === session?.user?.id ||
+                              task.creator.id === session?.user?.id ||
                               task.assignee?.id === session?.user?.id)
                           }
                         >
@@ -530,13 +530,13 @@ export default function TasksPage() {
                             <span>{formatDate(task.dueDate)}</span>
                           </div>
                         </div>
-                        {task.team && (
+                        {task.assignee?.team && (
                           <div className="flex items-center mt-2">
                             <span 
                               className="w-2 h-2 rounded-full mr-1" 
-                              style={{ backgroundColor: task.team.color || '#3B82F6' }}
+                              style={{ backgroundColor: task.assignee.team.color || '#3B82F6' }}
                             ></span>
-                            <span className="text-xs text-gray-500">{task.team.name}</span>
+                            <span className="text-xs text-gray-500">{task.assignee.team.name}</span>
                           </div>
                         )}
                       </div>

@@ -17,12 +17,12 @@ interface ApiEndpoint {
   requestBody?: {
     type: string
     description: string
-    example: any
+    example: Record<string, unknown>
   }
   responses: Array<{
     status: number
     description: string
-    example?: any
+    example?: Record<string, unknown>
   }>
 }
 

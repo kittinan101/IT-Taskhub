@@ -21,12 +21,12 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10')
 
     // Build where clause
-    const where: any = {}
+    const where: Record<string, unknown> = {}
     
     if (status) where.status = status
     if (priority) where.priority = priority
     if (assigneeId) where.assigneeId = assigneeId
-    if (teamId) where.teamId = teamId
+    if (teamId) where.assignee = { teamId }
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -53,14 +53,14 @@ export async function GET(request: NextRequest) {
               username: true,
               firstName: true,
               lastName: true,
-              role: true
-            }
-          },
-          team: {
-            select: {
-              id: true,
-              name: true,
-              color: true
+              role: true,
+              team: {
+                select: {
+                  id: true,
+                  name: true,
+                  color: true
+                }
+              }
             }
           },
           _count: {
@@ -115,8 +115,7 @@ export async function POST(request: NextRequest) {
       priority = 'MEDIUM',
       dueDate,
       startDate,
-      assigneeId,
-      teamId
+      assigneeId
     } = body
 
     if (!title) {
@@ -125,20 +124,20 @@ export async function POST(request: NextRequest) {
 
     // Validate assignee permissions
     if (assigneeId && !['ADMIN', 'PM'].includes(userRole)) {
-      // Non-admin/PM users can only assign to themselves or need team membership
+      // Non-admin/PM users can only assign to themselves or team members
       if (assigneeId !== session.user.id) {
-        if (teamId) {
-          const teamMember = await prisma.teamMember.findFirst({
-            where: {
-              teamId,
-              userId: session.user.id
-            }
-          })
-          if (!teamMember) {
-            return NextResponse.json({ error: 'Can only assign tasks within your team' }, { status: 403 })
-          }
-        } else {
-          return NextResponse.json({ error: 'Can only assign tasks to yourself' }, { status: 403 })
+        const currentUser = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { teamId: true }
+        })
+        
+        const assigneeUser = await prisma.user.findUnique({
+          where: { id: assigneeId },
+          select: { teamId: true }
+        })
+        
+        if (!currentUser?.teamId || currentUser.teamId !== assigneeUser?.teamId) {
+          return NextResponse.json({ error: 'Can only assign tasks within your team or to yourself' }, { status: 403 })
         }
       }
     }
@@ -151,8 +150,7 @@ export async function POST(request: NextRequest) {
         dueDate: dueDate ? new Date(dueDate) : null,
         startDate: startDate ? new Date(startDate) : null,
         creatorId: session.user.id,
-        assigneeId,
-        teamId
+        assigneeId
       },
       include: {
         creator: {
@@ -170,14 +168,14 @@ export async function POST(request: NextRequest) {
             username: true,
             firstName: true,
             lastName: true,
-            role: true
-          }
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
-            color: true
+            role: true,
+            team: {
+              select: {
+                id: true,
+                name: true,
+                color: true
+              }
+            }
           }
         }
       }

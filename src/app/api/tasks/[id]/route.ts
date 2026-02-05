@@ -33,14 +33,14 @@ export async function GET(
             username: true,
             firstName: true,
             lastName: true,
-            role: true
-          }
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
-            color: true
+            role: true,
+            team: {
+              select: {
+                id: true,
+                name: true,
+                color: true
+              }
+            }
           }
         },
         comments: {
@@ -137,7 +137,7 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
     
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
@@ -176,14 +176,14 @@ export async function PUT(
             username: true,
             firstName: true,
             lastName: true,
-            role: true
-          }
-        },
-        team: {
-          select: {
-            id: true,
-            name: true,
-            color: true
+            role: true,
+            team: {
+              select: {
+                id: true,
+                name: true,
+                color: true
+              }
+            }
           }
         }
       }
@@ -208,7 +208,7 @@ export async function DELETE(
 
     const { id } = await params
     const userRole = session.user.role
-    const userId = session.user.id
+    // const userId = session.user.id // TODO: Use for owner-based delete permissions
 
     // Only PM/Admin can delete tasks
     if (!['ADMIN', 'PM'].includes(userRole)) {

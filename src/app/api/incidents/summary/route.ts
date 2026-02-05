@@ -124,7 +124,13 @@ export async function GET(request: NextRequest) {
     })
 
     // Format the trend data
-    const formattedTrend = (trendData as any[]).map(row => ({
+    const formattedTrend = (trendData as Array<{
+      date: Date
+      count: number
+      critical_count: number
+      major_count: number
+      minor_count: number
+    }>).map(row => ({
       date: row.date.toISOString().split('T')[0],
       total: Number(row.count),
       critical: Number(row.critical_count),

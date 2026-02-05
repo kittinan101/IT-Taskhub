@@ -23,13 +23,13 @@ const roleColors = {
   QA: "bg-orange-100 text-orange-800",
 }
 
-const rolePriority = {
-  ADMIN: 1,
-  PM: 2,
-  BA: 3,
-  DEVELOPER: 4,
-  QA: 5
-}
+// const rolePriority = { // TODO: Use for sorting team members
+//   ADMIN: 1,
+//   PM: 2,
+//   BA: 3,
+//   DEVELOPER: 4,
+//   QA: 5
+// }
 
 export default function TeamPage() {
   const { data: session } = useSession()

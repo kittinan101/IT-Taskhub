@@ -1,21 +1,26 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
+const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Seeding database...')
 
-  // Hash password for all users
   const hashedPassword = await bcrypt.hash('admin123', 12)
 
-  // Create Admin user
+  // Create Team
+  const team = await prisma.team.upsert({
+    where: { name: 'Development Team' },
+    update: {},
+    create: {
+      name: 'Development Team',
+      description: 'Main development team for web applications',
+      color: '#3B82F6',
+      isActive: true,
+    },
+  })
+
+  // Create Users (1 user = 1 team)
   const admin = await prisma.user.upsert({
     where: { username: 'admin' },
     update: {},
@@ -26,11 +31,10 @@ async function main() {
       firstName: 'System',
       lastName: 'Administrator',
       role: 'ADMIN',
-      isActive: true,
+      teamId: team.id,
     },
   })
 
-  // Create PM user
   const pm = await prisma.user.upsert({
     where: { username: 'john.pm' },
     update: {},
@@ -41,11 +45,10 @@ async function main() {
       firstName: 'John',
       lastName: 'Manager',
       role: 'PM',
-      isActive: true,
+      teamId: team.id,
     },
   })
 
-  // Create BA user
   const ba = await prisma.user.upsert({
     where: { username: 'sarah.ba' },
     update: {},
@@ -56,11 +59,10 @@ async function main() {
       firstName: 'Sarah',
       lastName: 'Analyst',
       role: 'BA',
-      isActive: true,
+      teamId: team.id,
     },
   })
 
-  // Create Developer users
   const dev1 = await prisma.user.upsert({
     where: { username: 'alice.dev' },
     update: {},
@@ -71,7 +73,7 @@ async function main() {
       firstName: 'Alice',
       lastName: 'Developer',
       role: 'DEVELOPER',
-      isActive: true,
+      teamId: team.id,
     },
   })
 
@@ -85,11 +87,10 @@ async function main() {
       firstName: 'Bob',
       lastName: 'Developer',
       role: 'DEVELOPER',
-      isActive: true,
+      teamId: team.id,
     },
   })
 
-  // Create QA user
   const qa = await prisma.user.upsert({
     where: { username: 'emma.qa' },
     update: {},
@@ -100,54 +101,87 @@ async function main() {
       firstName: 'Emma',
       lastName: 'Tester',
       role: 'QA',
-      isActive: true,
+      teamId: team.id,
     },
   })
 
-  console.log('👤 Created users:')
-  console.log(`   Admin: ${admin.username} (${admin.role})`)
-  console.log(`   PM: ${pm.username} (${pm.role})`)
-  console.log(`   BA: ${ba.username} (${ba.role})`)
-  console.log(`   Dev1: ${dev1.username} (${dev1.role})`)
-  console.log(`   Dev2: ${dev2.username} (${dev2.role})`)
-  console.log(`   QA: ${qa.username} (${qa.role})`)
+  console.log('👤 Created users: admin, john.pm, sarah.ba, alice.dev, bob.dev, emma.qa')
+  console.log(`✅ QA user created: ${qa.email}`)
 
-  // Create a sample team
-  const team = await prisma.team.upsert({
-    where: { name: 'Development Team' },
+  // Create Projects
+  const project1 = await prisma.project.upsert({
+    where: { code: 'WEB' },
     update: {},
     create: {
-      name: 'Development Team',
-      description: 'Main development team for web applications',
+      name: 'Web Application',
+      code: 'WEB',
+      description: 'Main web application project',
       color: '#3B82F6',
+    },
+  })
+
+  const project2 = await prisma.project.upsert({
+    where: { code: 'API' },
+    update: {},
+    create: {
+      name: 'API Gateway',
+      code: 'API',
+      description: 'API gateway and backend services',
+      color: '#10B981',
+    },
+  })
+
+  console.log('🗂️  Created projects: WEB, API')
+
+  // Create Sprint
+  const sprint = await prisma.sprint.create({
+    data: {
+      name: 'Sprint 1',
+      projectId: project1.id,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       isActive: true,
     },
   })
 
-  // Add team members
-  await prisma.teamMember.createMany({
-    data: [
-      { userId: pm.id, teamId: team.id, role: 'lead' },
-      { userId: dev1.id, teamId: team.id, role: 'member' },
-      { userId: dev2.id, teamId: team.id, role: 'member' },
-      { userId: qa.id, teamId: team.id, role: 'member' },
-    ],
-    skipDuplicates: true,
+  console.log('🏃 Created sprint: Sprint 1')
+
+  // Create System Registry
+  const sys1 = await prisma.systemRegistry.upsert({
+    where: { code: 'WEBAPP' },
+    update: {},
+    create: { name: 'Web Application', code: 'WEBAPP', description: 'Main web app' },
   })
 
-  console.log(`🏢 Created team: ${team.name}`)
+  const sys2 = await prisma.systemRegistry.upsert({
+    where: { code: 'API-GW' },
+    update: {},
+    create: { name: 'API Gateway', code: 'API-GW', description: 'API gateway service' },
+  })
 
-  // Create sample tasks
+  const sys3 = await prisma.systemRegistry.upsert({
+    where: { code: 'PAY-SVC' },
+    update: {},
+    create: { name: 'Payment Service', code: 'PAY-SVC', description: 'Payment processing' },
+  })
+
+  console.log('🖥️  Created systems: WEBAPP, API-GW, PAY-SVC')
+  console.log(`✅ Payment system created: ${sys3.code}`)
+
+  // Create Tasks
   const task1 = await prisma.task.create({
     data: {
       title: 'Implement user authentication system',
       description: 'Create a secure login and registration system with JWT tokens',
       status: 'IN_PROGRESS',
       priority: 'HIGH',
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      estimatedHours: 16,
+      actualHours: 8,
       creatorId: pm.id,
       assigneeId: dev1.id,
-      teamId: team.id,
+      projectId: project1.id,
+      sprintId: sprint.id,
     },
   })
 
@@ -157,11 +191,14 @@ async function main() {
       description: 'Create wireframes for the main dashboard interface',
       status: 'DONE',
       priority: 'MEDIUM',
-      dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+      dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      estimatedHours: 8,
+      actualHours: 6,
       creatorId: ba.id,
       assigneeId: ba.id,
-      teamId: team.id,
+      projectId: project1.id,
+      sprintId: sprint.id,
     },
   })
 
@@ -171,62 +208,73 @@ async function main() {
       description: 'Payment gateway returns incorrect error codes',
       status: 'TODO',
       priority: 'URGENT',
-      dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day from now
+      dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+      estimatedHours: 4,
       creatorId: admin.id,
       assigneeId: dev2.id,
-      teamId: team.id,
+      projectId: project2.id,
     },
   })
 
-  const task4 = await prisma.task.create({
+  // Sub-task example
+  await prisma.task.create({
     data: {
-      title: 'Write unit tests for user service',
-      description: 'Add comprehensive unit tests for user management functionality',
-      status: 'TODO',
-      priority: 'MEDIUM',
-      dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-      creatorId: pm.id,
-      assigneeId: qa.id,
-      teamId: team.id,
+      title: 'Setup JWT token generation',
+      description: 'Implement JWT signing and verification',
+      status: 'DONE',
+      priority: 'HIGH',
+      estimatedHours: 4,
+      actualHours: 3,
+      completedAt: new Date(),
+      creatorId: dev1.id,
+      assigneeId: dev1.id,
+      projectId: project1.id,
+      parentId: task1.id,
     },
   })
 
-  // Create overdue task
+  await prisma.task.create({
+    data: {
+      title: 'Implement refresh token logic',
+      description: 'Add refresh token rotation',
+      status: 'IN_PROGRESS',
+      priority: 'HIGH',
+      estimatedHours: 6,
+      creatorId: dev1.id,
+      assigneeId: dev1.id,
+      projectId: project1.id,
+      parentId: task1.id,
+    },
+  })
+
   const overdueTask = await prisma.task.create({
     data: {
       title: 'Update documentation',
       description: 'Update API documentation with new endpoints',
       status: 'IN_PROGRESS',
       priority: 'LOW',
-      dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago (overdue)
+      dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
       creatorId: pm.id,
       assigneeId: dev1.id,
-      teamId: team.id,
+      projectId: project2.id,
     },
   })
 
-  console.log('📋 Created sample tasks:')
-  console.log(`   ${task1.title} (${task1.status})`)
-  console.log(`   ${task2.title} (${task2.status})`)
-  console.log(`   ${task3.title} (${task3.status})`)
-  console.log(`   ${task4.title} (${task4.status})`)
-  console.log(`   ${overdueTask.title} (${overdueTask.status}) - OVERDUE`)
+  console.log('📋 Created tasks with sub-tasks')
+  console.log(`⏰ Created overdue task: ${overdueTask.title}`)
 
-  // Create sample incidents
+  // Create Incidents
   const incident1 = await prisma.incident.create({
     data: {
       title: 'Database connection timeout in production',
-      description: 'Users experiencing timeouts when accessing the application. Database connections are being exhausted.',
-      system: 'WebApp',
+      description: 'Users experiencing timeouts when accessing the application.',
+      system: 'Web Application',
       environment: 'PRODUCTION',
       tier: 'CRITICAL',
       status: 'INVESTIGATING',
       assigneeId: dev1.id,
-      metadata: {
-        errorCode: 'DB_TIMEOUT',
-        affectedUsers: 150,
-        region: 'us-east-1'
-      },
+      systemId: sys1.id,
+      metadata: { errorCode: 'DB_TIMEOUT', affectedUsers: 150 },
     },
   })
 
@@ -239,11 +287,8 @@ async function main() {
       tier: 'MAJOR',
       status: 'OPEN',
       assigneeId: dev2.id,
-      metadata: {
-        avgResponseTime: '3.2s',
-        threshold: '1s',
-        endpoints: ['/api/users', '/api/tasks']
-      },
+      systemId: sys2.id,
+      metadata: { avgResponseTime: '3.2s', threshold: '1s' },
     },
   })
 
@@ -251,113 +296,78 @@ async function main() {
     data: {
       title: 'Minor CSS styling issue on mobile',
       description: 'Button alignment is slightly off on mobile devices',
-      system: 'WebApp',
+      system: 'Web Application',
       environment: 'PRODUCTION',
       tier: 'MINOR',
       status: 'RESOLVED',
       assigneeId: dev1.id,
-      resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-      metadata: {
-        browserInfo: 'Safari iOS',
-        reproduced: true
-      },
+      systemId: sys1.id,
+      resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     },
   })
 
-  console.log('🚨 Created sample incidents:')
-  console.log(`   ${incident1.title} (${incident1.tier}/${incident1.status})`)
-  console.log(`   ${incident2.title} (${incident2.tier}/${incident2.status})`)
-  console.log(`   ${incident3.title} (${incident3.tier}/${incident3.status})`)
+  console.log('🚨 Created incidents')
+  console.log(`🔍 Staging incident created: ${incident2.title}`)
+  console.log(`📱 Mobile incident created: ${incident3.title}`)
 
-  // Create some task comments
+  // Create Comments
   await prisma.taskComment.createMany({
     data: [
-      {
-        content: 'Started working on the authentication flow. JWT implementation is looking good.',
-        taskId: task1.id,
-        userId: dev1.id,
-      },
-      {
-        content: 'Great progress! Make sure to include refresh token logic.',
-        taskId: task1.id,
-        userId: pm.id,
-      },
-      {
-        content: 'Wireframes completed and shared with the team.',
-        taskId: task2.id,
-        userId: ba.id,
-      },
+      { content: 'Started working on JWT implementation.', taskId: task1.id, userId: dev1.id },
+      { content: 'Great progress! Include refresh token logic.', taskId: task1.id, userId: pm.id },
+      { content: 'Wireframes completed and shared.', taskId: task2.id, userId: ba.id },
     ],
   })
 
-  // Create some incident comments
   await prisma.incidentComment.createMany({
     data: [
-      {
-        content: 'Investigating the database connection pool. Initial analysis suggests we may need to increase pool size.',
-        incidentId: incident1.id,
-        userId: dev1.id,
-      },
-      {
-        content: 'Applied temporary fix by increasing connection timeout. Monitoring for improvement.',
-        incidentId: incident1.id,
-        userId: dev1.id,
-      },
-      {
-        content: 'Fixed the CSS issue by adjusting media queries. Deployed to production.',
-        incidentId: incident3.id,
-        userId: dev1.id,
-      },
+      { content: 'Investigating database connection pool.', incidentId: incident1.id, userId: dev1.id },
+      { content: 'Applied temporary fix. Monitoring.', incidentId: incident1.id, userId: dev1.id },
     ],
   })
 
-  console.log('💬 Created sample comments')
+  console.log('💬 Created comments')
 
-  // Create sample notifications
+  // Create Activity Logs
+  await prisma.activityLog.createMany({
+    data: [
+      { action: 'created', entityType: 'task', entityId: task1.id, userId: pm.id, details: { title: task1.title } },
+      { action: 'assigned', entityType: 'task', entityId: task1.id, userId: pm.id, details: { assignee: 'alice.dev' } },
+      { action: 'status_changed', entityType: 'task', entityId: task1.id, userId: dev1.id, details: { from: 'TODO', to: 'IN_PROGRESS' } },
+      { action: 'created', entityType: 'incident', entityId: incident1.id, userId: admin.id, details: { title: incident1.title, tier: 'CRITICAL' } },
+      { action: 'assigned', entityType: 'incident', entityId: incident1.id, userId: admin.id, details: { assignee: 'alice.dev' } },
+    ],
+  })
+
+  console.log('📝 Created activity logs')
+
+  // Create Notifications
   await prisma.notification.createMany({
     data: [
-      {
-        title: 'Task Assigned',
-        message: 'You have been assigned to "Implement user authentication system"',
-        type: 'task_assigned',
-        userId: dev1.id,
-        entityId: task1.id,
-        entityType: 'task',
-      },
-      {
-        title: 'Incident Created',
-        message: 'New CRITICAL incident: Database connection timeout in production',
-        type: 'incident_created',
-        userId: admin.id,
-        entityId: incident1.id,
-        entityType: 'incident',
-      },
-      {
-        title: 'Task Due Soon',
-        message: 'Task "Fix critical bug in payment processing" is due tomorrow',
-        type: 'task_due',
-        userId: dev2.id,
-        entityId: task3.id,
-        entityType: 'task',
-        read: false,
-      },
+      { title: 'Task Assigned', message: 'You have been assigned to "Implement user authentication"', type: 'task_assigned', userId: dev1.id, entityId: task1.id, entityType: 'task' },
+      { title: 'Incident Created', message: 'New CRITICAL: Database connection timeout', type: 'incident_created', userId: admin.id, entityId: incident1.id, entityType: 'incident' },
+      { title: 'Task Due Soon', message: 'Task "Fix critical bug" is due tomorrow', type: 'task_due', userId: dev2.id, entityId: task3.id, entityType: 'task' },
     ],
-    skipDuplicates: true,
   })
 
-  console.log('🔔 Created sample notifications')
+  console.log('🔔 Created notifications')
+
+  // Create App Config defaults
+  await prisma.appConfig.upsert({ where: { key: 'due_date_alert_days' }, update: {}, create: { key: 'due_date_alert_days', value: '3' } })
+  await prisma.appConfig.upsert({ where: { key: 'escalation_hours' }, update: {}, create: { key: 'escalation_hours', value: '4' } })
+  await prisma.appConfig.upsert({ where: { key: 'default_locale' }, update: {}, create: { key: 'default_locale', value: 'en' } })
+
+  console.log('⚙️  Created app config defaults')
+
   console.log('')
-  console.log('✅ Seeding completed successfully!')
+  console.log('✅ Seeding completed!')
   console.log('')
-  console.log('🔑 Login credentials for all users:')
-  console.log('   Username: admin, john.pm, sarah.ba, alice.dev, bob.dev, emma.qa')
-  console.log('   Password: admin123')
+  console.log('🔑 Login: admin / john.pm / sarah.ba / alice.dev / bob.dev / emma.qa')
+  console.log('🔒 Password: admin123')
 }
 
 main()
-  .then(async () => {
-    await prisma.$disconnect()
-  })
+  .then(async () => { await prisma.$disconnect() })
   .catch(async (e) => {
     console.error('❌ Seeding failed:', e)
     await prisma.$disconnect()

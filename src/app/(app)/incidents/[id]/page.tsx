@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
+// import { useRouter } from "next/navigation" // TODO: Add navigation features
 import Link from "next/link"
 import { Role } from "@prisma/client"
 import { 
@@ -14,7 +15,7 @@ import {
   getDisplayName,
   formatDate,
   formatDuration,
-  canUpdateIncident,
+  // canUpdateIncident, // TODO: Use for edit permissions
   canAssignIncident,
   canChangeStatus
 } from "@/lib/incidents"
@@ -22,7 +23,7 @@ import {
 export default function IncidentDetailPage() {
   const { data: session } = useSession()
   const params = useParams()
-  const router = useRouter()
+  // const router = useRouter() // TODO: Add navigation features
   const incidentId = params.id as string
 
   const [incident, setIncident] = useState<IncidentWithDetails | null>(null)
@@ -36,7 +37,7 @@ export default function IncidentDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState("")
   const [selectedAssignee, setSelectedAssignee] = useState("")
 
-  const fetchIncident = async () => {
+  const fetchIncident = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(`/api/incidents/${incidentId}`)
@@ -57,7 +58,7 @@ export default function IncidentDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [incidentId])
 
   const fetchUsers = async () => {
     try {
@@ -67,7 +68,7 @@ export default function IncidentDetailPage() {
         const data = await response.json()
         // Extract unique users from tasks data
         const userMap = new Map()
-        data.tasks?.forEach((task: any) => {
+        data.tasks?.forEach((task: { creator?: { id: string; username: string; firstName?: string; lastName?: string }; assignee?: { id: string; username: string; firstName?: string; lastName?: string } }) => {
           if (task.creator) userMap.set(task.creator.id, task.creator)
           if (task.assignee) userMap.set(task.assignee.id, task.assignee)
         })
@@ -220,7 +221,7 @@ export default function IncidentDetailPage() {
 
   const userRole = session.user.role as Role
   const userId = session.user.id
-  const canUpdate = canUpdateIncident(userRole, userId, incident)
+  // const canUpdate = canUpdateIncident(userRole, userId, incident) // TODO: Use for edit permissions
   const canAssign = canAssignIncident(userRole)
   const canStatus = canChangeStatus(userRole, userId, incident)
 

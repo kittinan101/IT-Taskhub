@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
     if (system) where.system = { contains: system, mode: 'insensitive' }
     if (environment) where.environment = environment.toUpperCase()
     if (tier) where.tier = tier.toUpperCase()
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Only admins and PMs can create incidents manually
-    if (![Role.ADMIN, Role.PM].includes(session.user.role as Role)) {
+    if (!(session.user.role === Role.ADMIN || session.user.role === Role.PM)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

@@ -93,7 +93,7 @@ export async function PUT(
     // - QA: can verify resolution (change status to RESOLVED), comment
     // - BA: can only comment (handled separately)
 
-    const canFullUpdate = [Role.ADMIN, Role.PM].includes(userRole)
+    const canFullUpdate = userRole === Role.ADMIN || userRole === Role.PM
     const isAssignee = currentIncident.assigneeId === userId
     const canStatusUpdate = canFullUpdate || isAssignee || userRole === Role.QA
 
@@ -102,7 +102,7 @@ export async function PUT(
     }
 
     // Build update data based on permissions
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
 
     if (canFullUpdate) {
       // Admin/PM can update everything

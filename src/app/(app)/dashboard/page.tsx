@@ -139,7 +139,7 @@ export default function DashboardPage() {
           Welcome back, {session?.user.firstName || session?.user.username}!
         </h1>
         <p className="text-gray-600">
-          Here's an overview of your current workload and system status.
+          Here&apos;s an overview of your current workload and system status.
         </p>
       </div>
 
@@ -308,7 +308,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">
-                      New task <span className="font-medium">"{task.title}"</span> was created
+                      New task <span className="font-medium">&quot;{task.title}&quot;</span> was created
                     </p>
                     <p className="text-xs text-gray-500">
                       {new Date(task.createdAt).toLocaleDateString()} • 
@@ -329,7 +329,7 @@ export default function DashboardPage() {
                       <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${tierColors[incident.tier as keyof typeof tierColors]}`}>
                         {incident.tier}
                       </span> incident 
-                      <span className="font-medium"> "{incident.title}"</span> was reported
+                      <span className="font-medium"> &quot;{incident.title}&quot;</span> was reported
                     </p>
                     <p className="text-xs text-gray-500">
                       {new Date(incident.createdAt).toLocaleDateString()} • {incident.environment}
