@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,9 +14,10 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await params
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!existingUser) {
@@ -24,7 +25,7 @@ export async function PUT(
     }
 
     // Prevent admin from deactivating themselves
-    if (params.id === session.user.id && existingUser.isActive) {
+    if (id === session.user.id && existingUser.isActive) {
       return NextResponse.json(
         { error: "Cannot deactivate your own account" },
         { status: 400 }
@@ -33,7 +34,7 @@ export async function PUT(
 
     // Toggle active status
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { isActive: !existingUser.isActive },
       select: {
         id: true,

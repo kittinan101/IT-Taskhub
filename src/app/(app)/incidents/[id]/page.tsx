@@ -477,15 +477,6 @@ export default function IncidentDetailPage() {
             </div>
           </div>
 
-          {/* Metadata */}
-          {incident.metadata && Object.keys(incident.metadata).length > 0 && (
-            <div className="bg-white shadow rounded-lg p-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-3">Metadata</h3>
-              <div className="text-xs text-gray-600 font-mono bg-gray-50 p-3 rounded-md overflow-auto max-h-40">
-                <pre>{JSON.stringify(incident.metadata, null, 2)}</pre>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

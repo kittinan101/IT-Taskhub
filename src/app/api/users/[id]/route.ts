@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,8 +15,9 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await params
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         username: true,
@@ -46,7 +47,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -55,9 +56,10 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await params
     // Check if user can update this profile
     const isAdmin = session.user.role === "ADMIN"
-    const isSelf = session.user.id === params.id
+    const isSelf = session.user.id === id
 
     if (!isAdmin && !isSelf) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
@@ -68,7 +70,7 @@ export async function PUT(
 
     // Validate that user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!existingUser) {
@@ -126,7 +128,7 @@ export async function PUT(
 
     // Update user
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       select: {
         id: true,

@@ -6,7 +6,7 @@ import { TaskStatus, TaskPriority } from '@prisma/client'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,8 +14,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         creator: {
           select: {
@@ -74,7 +75,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -82,12 +83,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const userRole = session.user.role
     const userId = session.user.id
 
     // Check if task exists
     const existingTask = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { creator: true, assignee: true }
     })
 
@@ -156,7 +158,7 @@ export async function PUT(
     }
 
     const updatedTask = await prisma.task.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         creator: {
@@ -196,7 +198,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -204,6 +206,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const userRole = session.user.role
     const userId = session.user.id
 
@@ -214,7 +217,7 @@ export async function DELETE(
 
     // Check if task exists
     const existingTask = await prisma.task.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!existingTask) {
@@ -222,7 +225,7 @@ export async function DELETE(
     }
 
     await prisma.task.delete({
-      where: { id: params.id }
+      where: { id }
     })
 
     return NextResponse.json({ message: 'Task deleted successfully' })

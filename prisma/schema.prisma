@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,6 +5,8 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// ============ ENUMS ============
 
 enum Role {
   ADMIN
@@ -49,6 +48,8 @@ enum IncidentStatus {
   CLOSED
 }
 
+// ============ USER & TEAM ============
+
 model User {
   id          String   @id @default(cuid())
   username    String   @unique
@@ -59,16 +60,21 @@ model User {
   role        Role     @default(DEVELOPER)
   isActive    Boolean  @default(true)
   avatar      String?
+  locale      String   @default("en") // en | th
+  teamId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  createdTasks    Task[]      @relation("TaskCreator")
-  assignedTasks   Task[]      @relation("TaskAssignee")
-  taskComments    TaskComment[]
-  assignedIncidents Incident[] @relation("IncidentAssignee")
+  team              Team?              @relation(fields: [teamId], references: [id])
+  createdTasks      Task[]             @relation("TaskCreator")
+  assignedTasks     Task[]             @relation("TaskAssignee")
+  taskComments      TaskComment[]
+  assignedIncidents Incident[]         @relation("IncidentAssignee")
   incidentComments  IncidentComment[]
-  teamMemberships   TeamMember[]
+  notifications     Notification[]
+  activityLogs      ActivityLog[]
+  attachments       Attachment[]
 
   @@map("users")
 }
@@ -83,48 +89,83 @@ model Team {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  members TeamMember[]
-  tasks   Task[]
+  members User[]
 
   @@map("teams")
 }
 
-model TeamMember {
-  id     String @id @default(cuid())
-  userId String
-  teamId String
-  role   String @default("member") // team role, not system role
+// ============ PROJECT & SPRINT ============
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, teamId])
-  @@map("team_members")
-}
-
-model Task {
-  id          String       @id @default(cuid())
-  title       String
+model Project {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique // short code e.g. "PAY", "USR"
   description String?
-  status      TaskStatus   @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  dueDate     DateTime?
-  startDate   DateTime?
-  completedAt DateTime?
-  position    Int?         // for kanban board ordering
-  
-  creatorId   String
-  assigneeId  String?
-  teamId      String?
-  
+  color       String?  @default("#3B82F6")
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  creator   User         @relation("TaskCreator", fields: [creatorId], references: [id])
-  assignee  User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  team      Team?        @relation(fields: [teamId], references: [id])
-  comments  TaskComment[]
+  tasks   Task[]
+  sprints Sprint[]
+
+  @@map("projects")
+}
+
+model Sprint {
+  id        String    @id @default(cuid())
+  name      String
+  projectId String
+  startDate DateTime?
+  endDate   DateTime?
+  isActive  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id])
+  tasks   Task[]
+
+  @@map("sprints")
+}
+
+// ============ TASK ============
+
+model Task {
+  id             String       @id @default(cuid())
+  title          String
+  description    String?
+  status         TaskStatus   @default(TODO)
+  priority       TaskPriority @default(MEDIUM)
+  dueDate        DateTime?
+  startDate      DateTime?
+  completedAt    DateTime?
+  position       Int?         // for kanban board ordering
+  estimatedHours Float?       // optional estimated hours
+  actualHours    Float?       // optional actual hours
+
+  creatorId  String
+  assigneeId String?
+  projectId  String?
+  sprintId   String?
+  parentId   String?       // sub-task parent
+  incidentId String?       // linked incident (optional)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  creator   User     @relation("TaskCreator", fields: [creatorId], references: [id])
+  assignee  User?    @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  project   Project? @relation(fields: [projectId], references: [id])
+  sprint    Sprint?  @relation(fields: [sprintId], references: [id])
+  parent    Task?    @relation("SubTasks", fields: [parentId], references: [id])
+  subTasks  Task[]   @relation("SubTasks")
+  incident  Incident? @relation(fields: [incidentId], references: [id])
+
+  comments    TaskComment[]
+  attachments Attachment[]  @relation("TaskAttachments")
 
   @@map("tasks")
 }
@@ -143,26 +184,50 @@ model TaskComment {
   @@map("task_comments")
 }
 
+// ============ INCIDENT / SYSTEM LOG ============
+
+model SystemRegistry {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique // short code e.g. "PAY-SVC"
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  incidents Incident[]
+
+  @@map("system_registry")
+}
+
 model Incident {
   id          String              @id @default(cuid())
   title       String
   description String?
-  system      String              // which system reported the incident
+  system      String              // system name (free text or from registry)
   environment IncidentEnvironment
   tier        IncidentTier
   status      IncidentStatus      @default(OPEN)
   metadata    Json?               // additional data from external systems
-  
+
   assigneeId  String?
+  systemId    String?             // link to SystemRegistry (optional)
   resolvedAt  DateTime?
   closedAt    DateTime?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  // Escalation support
+  escalatedAt   DateTime?
+  escalationLevel Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  assignee User?             @relation("IncidentAssignee", fields: [assigneeId], references: [id])
-  comments IncidentComment[]
+  assignee     User?           @relation("IncidentAssignee", fields: [assigneeId], references: [id])
+  systemRef    SystemRegistry? @relation(fields: [systemId], references: [id])
+  comments     IncidentComment[]
+  linkedTasks  Task[]          // tasks created from this incident
+  attachments  Attachment[]    @relation("IncidentAttachments")
 
   @@map("incidents")
 }
@@ -181,16 +246,64 @@ model IncidentComment {
   @@map("incident_comments")
 }
 
+// ============ SHARED ============
+
 model Notification {
-  id        String   @id @default(cuid())
-  title     String
-  message   String
-  type      String   // 'task_due', 'incident_created', etc.
-  userId    String
-  read      Boolean  @default(false)
-  entityId  String?  // related task/incident ID
-  entityType String? // 'task', 'incident'
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  title      String
+  message    String
+  type       String   // task_assigned, task_status, task_due, incident_created, incident_assigned, incident_status
+  userId     String
+  read       Boolean  @default(false)
+  emailSent  Boolean  @default(false)
+  entityId   String?  // related task/incident ID
+  entityType String?  // "task" | "incident"
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 
   @@map("notifications")
+}
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  action     String   // created, updated, status_changed, assigned, commented, attached, etc.
+  entityType String   // "task" | "incident" | "user" | "project" | "system"
+  entityId   String
+  userId     String
+  details    Json?    // { field: "status", from: "TODO", to: "IN_PROGRESS" }
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  filename   String
+  path       String   // storage path
+  mimeType   String?
+  size       Int?     // bytes
+  uploadedBy String
+  taskId     String?
+  incidentId String?
+  createdAt  DateTime @default(now())
+
+  uploader User      @relation(fields: [uploadedBy], references: [id])
+  task     Task?     @relation("TaskAttachments", fields: [taskId], references: [id])
+  incident Incident? @relation("IncidentAttachments", fields: [incidentId], references: [id])
+
+  @@map("attachments")
+}
+
+model AppConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  
+  @@map("app_config")
 }

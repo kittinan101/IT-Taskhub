@@ -1,4 +1,5 @@
-import { Role } from "@prisma/client"
+// Role type matching Prisma enum - avoid importing @prisma/client on client side
+type Role = "ADMIN" | "PM" | "BA" | "DEVELOPER" | "QA"
 
 export interface IncidentWithDetails {
   id: string
@@ -85,22 +86,22 @@ export const environmentColors = {
 }
 
 export function canUpdateIncident(userRole: Role, userId: string, incident: IncidentWithDetails): boolean {
-  const isAdmin = userRole === Role.ADMIN
-  const isPM = userRole === Role.PM
+  const isAdmin = userRole === "ADMIN"
+  const isPM = userRole === "PM"
   const isAssignee = incident.assigneeId === userId
   
   return isAdmin || isPM || isAssignee
 }
 
 export function canAssignIncident(userRole: Role): boolean {
-  return userRole === Role.ADMIN || userRole === Role.PM
+  return userRole === "ADMIN" || userRole === "PM"
 }
 
 export function canChangeStatus(userRole: Role, userId: string, incident: IncidentWithDetails): boolean {
-  const isAdmin = userRole === Role.ADMIN
-  const isPM = userRole === Role.PM
+  const isAdmin = userRole === "ADMIN"
+  const isPM = userRole === "PM"
   const isAssignee = incident.assigneeId === userId
-  const isQA = userRole === Role.QA
+  const isQA = userRole === "QA"
   
   return isAdmin || isPM || isAssignee || isQA
 }

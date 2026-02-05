@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,6 +13,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { content } = body
 
@@ -25,7 +26,7 @@ export async function POST(
 
     // Check if incident exists
     const incident = await prisma.incident.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!incident) {
@@ -36,7 +37,7 @@ export async function POST(
     const comment = await prisma.incidentComment.create({
       data: {
         content: content.trim(),
-        incidentId: params.id,
+        incidentId: id,
         userId: session.user.id,
       },
       include: {
@@ -67,7 +68,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -75,9 +76,10 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await params
     // Check if incident exists
     const incident = await prisma.incident.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!incident) {
@@ -85,7 +87,7 @@ export async function GET(
     }
 
     const comments = await prisma.incidentComment.findMany({
-      where: { incidentId: params.id },
+      where: { incidentId: id },
       include: {
         user: {
           select: {

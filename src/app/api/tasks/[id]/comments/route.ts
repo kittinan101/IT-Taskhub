@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -13,6 +13,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { content } = body
 
@@ -22,7 +23,7 @@ export async function POST(
 
     // Check if task exists
     const task = await prisma.task.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!task) {
@@ -32,7 +33,7 @@ export async function POST(
     const comment = await prisma.taskComment.create({
       data: {
         content: content.trim(),
-        taskId: params.id,
+        taskId: id,
         userId: session.user.id
       },
       include: {
@@ -57,7 +58,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -65,9 +66,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     // Check if task exists
     const task = await prisma.task.findUnique({
-      where: { id: params.id }
+      where: { id }
     })
 
     if (!task) {
@@ -75,7 +77,7 @@ export async function GET(
     }
 
     const comments = await prisma.taskComment.findMany({
-      where: { taskId: params.id },
+      where: { taskId: id },
       include: {
         user: {
           select: {

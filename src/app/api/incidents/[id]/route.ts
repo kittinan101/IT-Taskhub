@@ -6,7 +6,7 @@ import { Role } from "@prisma/client"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,8 +14,9 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await params
     const incident = await prisma.incident.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         assignee: {
           select: {
@@ -61,7 +62,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -69,6 +70,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const { status, assigneeId, title, description } = body
 
@@ -78,7 +80,7 @@ export async function PUT(
 
     // Get current incident to check assignee
     const currentIncident = await prisma.incident.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!currentIncident) {
@@ -130,7 +132,7 @@ export async function PUT(
     }
 
     const incident = await prisma.incident.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...updateData,
         updatedAt: new Date(),
