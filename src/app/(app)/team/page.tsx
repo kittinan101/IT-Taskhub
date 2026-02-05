@@ -1,61 +1,207 @@
 "use client"
 
-import { useState } from "react"
+import { useSession } from "next-auth/react"
+import { useState, useEffect } from "react"
 
-const mockUsers = [
-  {
-    id: "1",
-    username: "john.doe",
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@company.com",
-    role: "ADMIN",
-    isActive: true,
-    createdAt: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    username: "jane.smith",
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@company.com",
-    role: "MANAGER",
-    isActive: true,
-    createdAt: "2024-01-20T10:00:00Z",
-  },
-  {
-    id: "3",
-    username: "alice.johnson",
-    firstName: "Alice",
-    lastName: "Johnson",
-    email: "alice.johnson@company.com",
-    role: "MEMBER",
-    isActive: true,
-    createdAt: "2024-01-25T10:00:00Z",
-  },
-  {
-    id: "4",
-    username: "bob.wilson",
-    firstName: "Bob",
-    lastName: "Wilson",
-    email: "bob.wilson@company.com",
-    role: "MEMBER",
-    isActive: false,
-    createdAt: "2024-02-01T10:00:00Z",
-  },
-]
+interface User {
+  id: string
+  username: string
+  firstName: string | null
+  lastName: string | null
+  email: string | null
+  role: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
 
 const roleColors = {
   ADMIN: "bg-purple-100 text-purple-800",
-  MANAGER: "bg-blue-100 text-blue-800", 
-  MEMBER: "bg-green-100 text-green-800",
+  PM: "bg-blue-100 text-blue-800",
+  BA: "bg-teal-100 text-teal-800", 
+  DEVELOPER: "bg-green-100 text-green-800",
+  QA: "bg-orange-100 text-orange-800",
+}
+
+const rolePriority = {
+  ADMIN: 1,
+  PM: 2,
+  BA: 3,
+  DEVELOPER: 4,
+  QA: 5
 }
 
 export default function TeamPage() {
+  const { data: session } = useSession()
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [filterRole, setFilterRole] = useState("all")
   const [filterStatus, setFilterStatus] = useState("all")
+  const [search, setSearch] = useState("")
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
-  const filteredUsers = mockUsers.filter((user) => {
+  // Add user form data
+  const [addUserData, setAddUserData] = useState({
+    username: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    role: "DEVELOPER"
+  })
+
+  // Edit user form data
+  const [editUserData, setEditUserData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: ""
+  })
+
+  const fetchUsers = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (filterRole !== "all") params.set("role", filterRole)
+      if (filterStatus !== "all") params.set("status", filterStatus)
+      if (search) params.set("search", search)
+
+      const response = await fetch(`/api/users?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error("Failed to fetch users")
+      }
+      const data = await response.json()
+      setUsers(data.users)
+    } catch (err) {
+      console.error("Error fetching users:", err)
+      setError("Failed to load users")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (session) {
+      fetchUsers()
+    }
+  }, [session, filterRole, filterStatus, search])
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(addUserData)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to create user")
+      }
+
+      // Reset form and close modal
+      setAddUserData({
+        username: "",
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        role: "DEVELOPER"
+      })
+      setShowAddModal(false)
+      
+      // Refresh users list
+      fetchUsers()
+    } catch (err) {
+      console.error("Error creating user:", err)
+      alert(err instanceof Error ? err.message : "Failed to create user")
+    }
+  }
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedUser) return
+
+    try {
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(editUserData)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to update user")
+      }
+
+      setShowEditModal(false)
+      setSelectedUser(null)
+      fetchUsers()
+    } catch (err) {
+      console.error("Error updating user:", err)
+      alert(err instanceof Error ? err.message : "Failed to update user")
+    }
+  }
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/role`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ role: newRole })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to change role")
+      }
+
+      fetchUsers()
+    } catch (err) {
+      console.error("Error changing role:", err)
+      alert(err instanceof Error ? err.message : "Failed to change role")
+    }
+  }
+
+  const handleToggleActive = async (userId: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/toggle-active`, {
+        method: "PUT"
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to toggle user status")
+      }
+
+      fetchUsers()
+    } catch (err) {
+      console.error("Error toggling user status:", err)
+      alert(err instanceof Error ? err.message : "Failed to toggle user status")
+    }
+  }
+
+  const openEditModal = (user: User) => {
+    setSelectedUser(user)
+    setEditUserData({
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      email: user.email || "",
+      role: user.role
+    })
+    setShowEditModal(true)
+  }
+
+  const filteredUsers = users.filter((user) => {
     if (filterRole !== "all" && user.role !== filterRole) return false
     if (filterStatus !== "all") {
       if (filterStatus === "active" && !user.isActive) return false
@@ -64,6 +210,24 @@ export default function TeamPage() {
     return true
   })
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="text-lg">Loading team members...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="text-red-600">{error}</div>
+      </div>
+    )
+  }
+
+  const isAdmin = session?.user.role === "ADMIN"
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -71,9 +235,14 @@ export default function TeamPage() {
           <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
           <p className="text-gray-600">Manage team members and their roles</p>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
-          Add User
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+          >
+            Add User
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -90,8 +259,10 @@ export default function TeamPage() {
             >
               <option value="all">All Roles</option>
               <option value="ADMIN">Admin</option>
-              <option value="MANAGER">Manager</option>
-              <option value="MEMBER">Member</option>
+              <option value="PM">PM</option>
+              <option value="BA">BA</option>
+              <option value="DEVELOPER">Developer</option>
+              <option value="QA">QA</option>
             </select>
           </div>
 
@@ -109,11 +280,24 @@ export default function TeamPage() {
               <option value="inactive">Inactive</option>
             </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Search
+            </label>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search users..."
+              className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+            />
+          </div>
         </div>
       </div>
 
       {/* Team Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -127,7 +311,7 @@ export default function TeamPage() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                  <dd className="text-lg font-medium text-gray-900">{mockUsers.length}</dd>
+                  <dd className="text-lg font-medium text-gray-900">{users.length}</dd>
                 </dl>
               </div>
             </div>
@@ -148,7 +332,7 @@ export default function TeamPage() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Active Users</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {mockUsers.filter(u => u.isActive).length}
+                    {users.filter(u => u.isActive).length}
                   </dd>
                 </dl>
               </div>
@@ -170,7 +354,30 @@ export default function TeamPage() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Admins</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {mockUsers.filter(u => u.role === "ADMIN").length}
+                    {users.filter(u => u.role === "ADMIN").length}
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Developers</dt>
+                  <dd className="text-lg font-medium text-gray-900">
+                    {users.filter(u => u.role === "DEVELOPER").length}
                   </dd>
                 </dl>
               </div>
@@ -211,17 +418,22 @@ export default function TeamPage() {
                         <div className="h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
                             <span className="text-sm font-medium text-gray-700">
-                              {user.firstName[0]}{user.lastName[0]}
+                              {(user.firstName?.[0] || user.username[0]).toUpperCase()}
+                              {(user.lastName?.[0] || user.username[1] || '').toUpperCase()}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
+                            {user.firstName && user.lastName 
+                              ? `${user.firstName} ${user.lastName}` 
+                              : user.username}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {user.email}
-                          </div>
+                          {user.email && (
+                            <div className="text-sm text-gray-500">
+                              {user.email}
+                            </div>
+                          )}
                           <div className="text-sm text-gray-400">
                             @{user.username}
                           </div>
@@ -229,13 +441,25 @@ export default function TeamPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          roleColors[user.role as keyof typeof roleColors]
-                        }`}
-                      >
-                        {user.role}
-                      </span>
+                      {isAdmin ? (
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                          className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${roleColors[user.role as keyof typeof roleColors]}`}
+                        >
+                          <option value="ADMIN">Admin</option>
+                          <option value="PM">PM</option>
+                          <option value="BA">BA</option>
+                          <option value="DEVELOPER">Developer</option>
+                          <option value="QA">QA</option>
+                        </select>
+                      ) : (
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${roleColors[user.role as keyof typeof roleColors]}`}
+                        >
+                          {user.role}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -253,18 +477,24 @@ export default function TeamPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <button className="text-blue-600 hover:text-blue-900">
+                        <button 
+                          onClick={() => openEditModal(user)}
+                          className="text-blue-600 hover:text-blue-900"
+                        >
                           Edit
                         </button>
-                        <button 
-                          className={`${
-                            user.isActive 
-                              ? "text-red-600 hover:text-red-900" 
-                              : "text-green-600 hover:text-green-900"
-                          }`}
-                        >
-                          {user.isActive ? "Deactivate" : "Activate"}
-                        </button>
+                        {isAdmin && user.id !== session?.user.id && (
+                          <button 
+                            onClick={() => handleToggleActive(user.id)}
+                            className={`${
+                              user.isActive 
+                                ? "text-red-600 hover:text-red-900" 
+                                : "text-green-600 hover:text-green-900"
+                            }`}
+                          >
+                            {user.isActive ? "Deactivate" : "Activate"}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -280,6 +510,155 @@ export default function TeamPage() {
           )}
         </div>
       </div>
+
+      {/* Add User Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add New User</h3>
+              <form onSubmit={handleAddUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Username *</label>
+                  <input
+                    type="text"
+                    required
+                    value={addUserData.username}
+                    onChange={(e) => setAddUserData({...addUserData, username: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">First Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={addUserData.firstName}
+                    onChange={(e) => setAddUserData({...addUserData, firstName: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Last Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={addUserData.lastName}
+                    onChange={(e) => setAddUserData({...addUserData, lastName: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={addUserData.email}
+                    onChange={(e) => setAddUserData({...addUserData, email: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Password *</label>
+                  <input
+                    type="password"
+                    required
+                    value={addUserData.password}
+                    onChange={(e) => setAddUserData({...addUserData, password: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Role *</label>
+                  <select
+                    required
+                    value={addUserData.role}
+                    onChange={(e) => setAddUserData({...addUserData, role: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="ADMIN">Admin</option>
+                    <option value="PM">PM</option>
+                    <option value="BA">BA</option>
+                    <option value="DEVELOPER">Developer</option>
+                    <option value="QA">QA</option>
+                  </select>
+                </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  >
+                    Create User
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Edit User: @{selectedUser.username}
+              </h3>
+              <form onSubmit={handleEditUser} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">First Name</label>
+                  <input
+                    type="text"
+                    value={editUserData.firstName}
+                    onChange={(e) => setEditUserData({...editUserData, firstName: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                  <input
+                    type="text"
+                    value={editUserData.lastName}
+                    onChange={(e) => setEditUserData({...editUserData, lastName: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={editUserData.email}
+                    onChange={(e) => setEditUserData({...editUserData, email: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  >
+                    Update User
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -4,51 +4,117 @@ import { useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 
-interface DashboardStats {
-  tasks: {
-    total: number
-    todo: number
-    inProgress: number
-    done: number
-    overdue: number
+interface DashboardData {
+  overview: {
+    totalTasks: number
+    overdueTasks: number
+    openIncidents: number
+    teamMembers: number
   }
-  incidents: {
-    total: number
-    open: number
-    investigating: number
-    resolved: number
-    critical: number
+  recentTasks: Array<{
+    id: string
+    title: string
+    status: string
+    priority: string
+    dueDate: string | null
+    creator: {
+      firstName: string | null
+      lastName: string | null
+      username: string
+    }
+    assignee: {
+      firstName: string | null
+      lastName: string | null
+      username: string
+    } | null
+    createdAt: string
+  }>
+  recentIncidents: Array<{
+    id: string
+    title: string
+    tier: string
+    status: string
+    environment: string
+    assignee: {
+      firstName: string | null
+      lastName: string | null
+      username: string
+    } | null
+    createdAt: string
+  }>
+  myAssignedTasks: Array<{
+    id: string
+    title: string
+    status: string
+    priority: string
+    dueDate: string | null
+    creator: {
+      firstName: string | null
+      lastName: string | null
+      username: string
+    }
+    createdAt: string
+  }>
+  stats: {
+    tasksByStatus: {
+      TODO: number
+      IN_PROGRESS: number
+      DONE: number
+    }
+    incidentsByTier: {
+      CRITICAL: number
+      MAJOR: number
+      MINOR: number
+    }
   }
+}
+
+const priorityColors = {
+  LOW: "text-green-600",
+  MEDIUM: "text-yellow-600",
+  HIGH: "text-orange-600",
+  URGENT: "text-red-600"
+}
+
+const statusColors = {
+  TODO: "bg-gray-100 text-gray-800",
+  IN_PROGRESS: "bg-blue-100 text-blue-800",
+  DONE: "bg-green-100 text-green-800"
+}
+
+const tierColors = {
+  CRITICAL: "bg-red-100 text-red-800",
+  MAJOR: "bg-orange-100 text-orange-800",
+  MINOR: "bg-yellow-100 text-yellow-800"
 }
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // TODO: Fetch actual stats from API
-    // For now, using mock data
-    setTimeout(() => {
-      setStats({
-        tasks: {
-          total: 42,
-          todo: 15,
-          inProgress: 8,
-          done: 19,
-          overdue: 3,
-        },
-        incidents: {
-          total: 28,
-          open: 5,
-          investigating: 3,
-          resolved: 20,
-          critical: 2,
-        },
-      })
-      setLoading(false)
-    }, 1000)
-  }, [])
+    async function fetchDashboardData() {
+      try {
+        const response = await fetch("/api/dashboard")
+        if (!response.ok) {
+          throw new Error("Failed to fetch dashboard data")
+        }
+        const data = await response.json()
+        setDashboardData(data)
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err)
+        setError("Failed to load dashboard data")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (session) {
+      fetchDashboardData()
+    }
+  }, [session])
 
   if (loading) {
     return (
@@ -58,11 +124,19 @@ export default function DashboardPage() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="text-red-600">{error}</div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {session?.user.firstName}!
+          Welcome back, {session?.user.firstName || session?.user.username}!
         </h1>
         <p className="text-gray-600">
           Here's an overview of your current workload and system status.
@@ -71,7 +145,7 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Task Stats */}
+        {/* Total Tasks */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -85,7 +159,7 @@ export default function DashboardPage() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Total Tasks</dt>
-                  <dd className="text-lg font-medium text-gray-900">{stats?.tasks.total}</dd>
+                  <dd className="text-lg font-medium text-gray-900">{dashboardData?.overview.totalTasks}</dd>
                 </dl>
               </div>
             </div>
@@ -99,12 +173,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Tasks In Progress */}
+        {/* Overdue Tasks */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
+                <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -112,43 +186,15 @@ export default function DashboardPage() {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">In Progress</dt>
-                  <dd className="text-lg font-medium text-gray-900">{stats?.tasks.inProgress}</dd>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Overdue Tasks</dt>
+                  <dd className="text-lg font-medium text-gray-900">{dashboardData?.overview.overdueTasks}</dd>
                 </dl>
               </div>
             </div>
           </div>
           <div className="bg-gray-50 px-5 py-3">
             <div className="text-sm">
-              <span className="text-yellow-600">{stats?.tasks.overdue} overdue</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Incidents */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Total Incidents</dt>
-                  <dd className="text-lg font-medium text-gray-900">{stats?.incidents.total}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-          <div className="bg-gray-50 px-5 py-3">
-            <div className="text-sm">
-              <Link href="/incidents" className="font-medium text-red-700 hover:text-red-900">
-                View all incidents
-              </Link>
+              <span className="text-red-600">Requires attention</span>
             </div>
           </div>
         </div>
@@ -160,80 +206,187 @@ export default function DashboardPage() {
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-orange-500 rounded-md flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                 </div>
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Open Incidents</dt>
-                  <dd className="text-lg font-medium text-gray-900">{stats?.incidents.open}</dd>
+                  <dd className="text-lg font-medium text-gray-900">{dashboardData?.overview.openIncidents}</dd>
                 </dl>
               </div>
             </div>
           </div>
           <div className="bg-gray-50 px-5 py-3">
             <div className="text-sm">
-              <span className="text-red-600">{stats?.incidents.critical} critical</span>
+              <Link href="/incidents" className="font-medium text-orange-700 hover:text-orange-900">
+                View all incidents
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Team Members */}
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Team Members</dt>
+                  <dd className="text-lg font-medium text-gray-900">{dashboardData?.overview.teamMembers}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 px-5 py-3">
+            <div className="text-sm">
+              <Link href="/team" className="font-medium text-green-700 hover:text-green-900">
+                Manage team
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
-          <div className="mt-5">
-            <div className="flow-root">
-              <ul className="-mb-8">
-                <li>
-                  <div className="relative pb-8">
-                    <div className="relative flex space-x-3">
-                      <div>
-                        <span className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* My Assigned Tasks */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">My Assigned Tasks</h3>
+            <div className="space-y-3">
+              {dashboardData?.myAssignedTasks.length === 0 ? (
+                <p className="text-gray-500 text-sm">No tasks assigned to you</p>
+              ) : (
+                dashboardData?.myAssignedTasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[task.status as keyof typeof statusColors]}`}>
+                          {task.status.replace('_', ' ')}
+                        </span>
+                        <span className={`text-xs font-medium ${priorityColors[task.priority as keyof typeof priorityColors]}`}>
+                          {task.priority}
                         </span>
                       </div>
-                      <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                        <div>
-                          <p className="text-sm text-gray-500">
-                            Task <span className="font-medium text-gray-900">"Fix login bug"</span> was completed
-                          </p>
-                        </div>
-                        <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                          <time dateTime="2024-01-20">2h ago</time>
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                </li>
-                <li>
-                  <div className="relative pb-8">
-                    <div className="relative flex space-x-3">
-                      <div>
-                        <span className="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center ring-8 ring-white">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                          </svg>
-                        </span>
+                    {task.dueDate && (
+                      <div className="text-xs text-gray-500">
+                        Due: {new Date(task.dueDate).toLocaleDateString()}
                       </div>
-                      <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                        <div>
-                          <p className="text-sm text-gray-500">
-                            Critical incident <span className="font-medium text-gray-900">"Database connection timeout"</span> was created
-                          </p>
-                        </div>
-                        <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                          <time dateTime="2024-01-20">4h ago</time>
-                        </div>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                </li>
-              </ul>
+                ))
+              )}
+            </div>
+            <div className="mt-4">
+              <Link href="/tasks" className="text-sm text-blue-600 hover:text-blue-800">
+                View all my tasks →
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activities */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Recent Activity</h3>
+            <div className="space-y-4">
+              {/* Recent Tasks */}
+              {dashboardData?.recentTasks.slice(0, 3).map((task) => (
+                <div key={task.id} className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">
+                      New task <span className="font-medium">"{task.title}"</span> was created
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(task.createdAt).toLocaleDateString()} • 
+                      by {task.creator.firstName || task.creator.username}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              
+              {/* Recent Incidents */}
+              {dashboardData?.recentIncidents.slice(0, 2).map((incident) => (
+                <div key={incident.id} className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">
+                      <span className={`inline-flex px-1 py-0.5 text-xs font-semibold rounded ${tierColors[incident.tier as keyof typeof tierColors]}`}>
+                        {incident.tier}
+                      </span> incident 
+                      <span className="font-medium"> "{incident.title}"</span> was reported
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(incident.createdAt).toLocaleDateString()} • {incident.environment}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4">
+              <Link href="/incidents" className="text-sm text-blue-600 hover:text-blue-800">
+                View all activity →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tasks by Status */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Tasks by Status</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">To Do</span>
+                <span className="text-sm font-medium text-gray-900">{dashboardData?.stats.tasksByStatus.TODO}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">In Progress</span>
+                <span className="text-sm font-medium text-gray-900">{dashboardData?.stats.tasksByStatus.IN_PROGRESS}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Done</span>
+                <span className="text-sm font-medium text-gray-900">{dashboardData?.stats.tasksByStatus.DONE}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Incidents by Tier */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Incidents by Tier</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Critical</span>
+                <span className="text-sm font-medium text-red-600">{dashboardData?.stats.incidentsByTier.CRITICAL}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Major</span>
+                <span className="text-sm font-medium text-orange-600">{dashboardData?.stats.incidentsByTier.MAJOR}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Minor</span>
+                <span className="text-sm font-medium text-yellow-600">{dashboardData?.stats.incidentsByTier.MINOR}</span>
+              </div>
             </div>
           </div>
         </div>

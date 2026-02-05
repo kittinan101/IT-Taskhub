@@ -2,7 +2,21 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { IncidentEnvironment, IncidentTier } from "@prisma/client"
 
+// Simple API key validation
+function validateApiKey(request: NextRequest): boolean {
+  const apiKey = request.headers.get("x-api-key")
+  const validApiKeys = process.env.API_KEYS?.split(",") || []
+  return apiKey ? validApiKeys.includes(apiKey) : false
+}
+
 export async function POST(request: NextRequest) {
+  // Validate API key
+  if (!validateApiKey(request)) {
+    return NextResponse.json(
+      { error: "Invalid or missing API key" },
+      { status: 401 }
+    )
+  }
   try {
     const body = await request.json()
     
@@ -72,6 +86,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  // Validate API key
+  if (!validateApiKey(request)) {
+    return NextResponse.json(
+      { error: "Invalid or missing API key" },
+      { status: 401 }
+    )
+  }
+  
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get("page") || "1")
