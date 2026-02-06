@@ -19,6 +19,8 @@ import {
   canAssignIncident,
   canChangeStatus
 } from "@/lib/incidents"
+import FileUpload from "@/components/ui/FileUpload"
+import AttachmentList from "@/components/ui/AttachmentList"
 
 export default function IncidentDetailPage() {
   const { data: session } = useSession()
@@ -386,6 +388,36 @@ export default function IncidentDetailPage() {
               ) : (
                 <div className="text-sm text-gray-500">No comments yet.</div>
               )}
+            </div>
+          </div>
+
+          {/* Attachments */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Attachments ({incident.attachments?.length || 0})
+            </h2>
+
+            {/* Upload Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Upload Files</h3>
+              <FileUpload
+                incidentId={incident.id}
+                onUploadSuccess={() => fetchIncident()}
+                className="border border-gray-300 rounded-lg p-4"
+              />
+            </div>
+
+            {/* Attachments List */}
+            <div>
+              <AttachmentList
+                attachments={incident.attachments?.map(att => ({
+                  ...att,
+                  createdAt: att.createdAt.toISOString()
+                })) || []}
+                canDelete={session?.user?.role === 'ADMIN' || 
+                          incident.assigneeId === session?.user?.id ||
+                          incident.attachments?.some(att => att.uploader.id === session?.user?.id)}
+              />
             </div>
           </div>
         </div>

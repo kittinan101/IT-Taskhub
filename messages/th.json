@@ -1,0 +1,148 @@
+{
+  "common": {
+    "loading": "กำลังโหลด...",
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "create": "สร้าง",
+    "update": "อัปเดต",
+    "search": "ค้นหา",
+    "filter": "กรอง",
+    "actions": "การดำเนินการ",
+    "yes": "ใช่",
+    "no": "ไม่",
+    "confirm": "ยืนยัน",
+    "close": "ปิด"
+  },
+  "navigation": {
+    "dashboard": "แดชบอร์ด",
+    "tasks": "งาน",
+    "incidents": "เหตุการณ์",
+    "users": "ผู้ใช้",
+    "teams": "ทีม",
+    "projects": "โครงการ",
+    "settings": "การตั้งค่า",
+    "logout": "ออกจากระบบ"
+  },
+  "auth": {
+    "login": "เข้าสู่ระบบ",
+    "username": "ชื่อผู้ใช้",
+    "password": "รหัสผ่าน",
+    "loginButton": "เข้าสู่ระบบ",
+    "loginError": "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง"
+  },
+  "dashboard": {
+    "title": "แดชบอร์ด",
+    "myTasks": "งานของฉัน",
+    "recentIncidents": "เหตุการณ์ล่าสุด",
+    "teamActivity": "กิจกรรมของทีม",
+    "statistics": "สถิติ"
+  },
+  "tasks": {
+    "title": "งาน",
+    "newTask": "งานใหม่",
+    "taskTitle": "หัวข้อ",
+    "description": "รายละเอียด",
+    "status": "สถานะ",
+    "priority": "ความสำคัญ",
+    "assignee": "ผู้รับผิดชอบ",
+    "dueDate": "วันกำหนดส่ง",
+    "project": "โครงการ",
+    "sprint": "สปริ้นท์",
+    "estimatedHours": "เวลาประมาณ (ชั่วโมง)",
+    "actualHours": "เวลาจริง (ชั่วโมง)",
+    "comments": "ความคิดเห็น",
+    "addComment": "เพิ่มความคิดเห็น",
+    "noTasks": "ไม่พบงาน",
+    "statusOptions": {
+      "TODO": "รอดำเนินการ",
+      "IN_PROGRESS": "กำลังดำเนินการ",
+      "DONE": "เสร็จสิ้น"
+    },
+    "priorityOptions": {
+      "LOW": "ต่ำ",
+      "MEDIUM": "กลาง",
+      "HIGH": "สูง",
+      "URGENT": "เร่งด่วน"
+    }
+  },
+  "incidents": {
+    "title": "เหตุการณ์",
+    "newIncident": "เหตุการณ์ใหม่",
+    "incidentTitle": "หัวข้อ",
+    "description": "รายละเอียด",
+    "system": "ระบบ",
+    "environment": "สภาพแวดล้อม",
+    "tier": "ระดับความรุนแรง",
+    "status": "สถานะ",
+    "assignee": "ผู้รับผิดชอบ",
+    "comments": "ความคิดเห็น",
+    "addComment": "เพิ่มความคิดเห็น",
+    "noIncidents": "ไม่พบเหตุการณ์",
+    "environmentOptions": {
+      "PRODUCTION": "ผลิต",
+      "STAGING": "ทดสอบ",
+      "DEV": "พัฒนา"
+    },
+    "tierOptions": {
+      "CRITICAL": "วิกฤติ",
+      "MAJOR": "สำคัญ",
+      "MINOR": "เล็กน้อย"
+    },
+    "statusOptions": {
+      "OPEN": "เปิด",
+      "INVESTIGATING": "กำลังตรวจสอบ",
+      "RESOLVED": "แก้ไขแล้ว",
+      "CLOSED": "ปิด"
+    }
+  },
+  "users": {
+    "title": "ผู้ใช้",
+    "newUser": "ผู้ใช้ใหม่",
+    "username": "ชื่อผู้ใช้",
+    "email": "อีเมล",
+    "firstName": "ชื่อ",
+    "lastName": "นามสกุล",
+    "role": "บทบาท",
+    "team": "ทีม",
+    "isActive": "ใช้งานอยู่",
+    "noUsers": "ไม่พบผู้ใช้",
+    "roleOptions": {
+      "ADMIN": "ผู้ดูแลระบบ",
+      "PM": "ผู้จัดการโครงการ",
+      "BA": "นักวิเคราะห์ธุรกิจ",
+      "DEVELOPER": "นักพัฒนา",
+      "QA": "การประกันคุณภาพ"
+    }
+  },
+  "settings": {
+    "title": "การตั้งค่า",
+    "language": "ภาษา",
+    "languageOptions": {
+      "en": "อังกฤษ",
+      "th": "ไทย"
+    },
+    "profile": "โปรไฟล์",
+    "preferences": "ค่าปรับแต่ง",
+    "notifications": "การแจ้งเตือน"
+  },
+  "validation": {
+    "required": "ข้อมูลนี้จำเป็นต้องกรอก",
+    "emailInvalid": "กรุณากรอกอีเมลที่ถูกต้อง",
+    "passwordTooShort": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+    "usernameTooShort": "ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร"
+  },
+  "messages": {
+    "success": {
+      "created": "สร้างเรียบร้อยแล้ว",
+      "updated": "อัปเดตเรียบร้อยแล้ว",
+      "deleted": "ลบเรียบร้อยแล้ว"
+    },
+    "error": {
+      "general": "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง",
+      "notFound": "ไม่พบข้อมูล",
+      "unauthorized": "คุณไม่มีสิทธิ์ในการดำเนินการนี้"
+    }
+  }
+}

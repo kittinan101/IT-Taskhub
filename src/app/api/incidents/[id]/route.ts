@@ -42,6 +42,21 @@ export async function GET(
             createdAt: "asc",
           },
         },
+        attachments: {
+          include: {
+            uploader: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
       },
     })
 

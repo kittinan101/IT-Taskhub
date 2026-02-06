@@ -2,6 +2,8 @@
 
 import { useSession } from "next-auth/react"
 import { useState } from "react"
+import { useTranslations } from 'next-intl'
+import LocaleSwitcher from '@/components/LocaleSwitcher'
 
 export default function SettingsPage() {
   const { data: session, update: updateSession } = useSession()
@@ -362,6 +364,19 @@ export default function SettingsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+
+        {/* Language & Preferences */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Language & Preferences</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Customize your language and interface preferences.
+            </p>
+            <div className="mt-5">
+              <LocaleSwitcher />
+            </div>
           </div>
         </div>
 

@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { TaskStatus, TaskPriority, Role } from "@prisma/client"
+import FileUpload from "@/components/ui/FileUpload"
+import AttachmentList from "@/components/ui/AttachmentList"
 
 interface User {
   id: string
@@ -27,6 +29,20 @@ interface Comment {
   user: User
 }
 
+interface Attachment {
+  id: string
+  filename: string
+  size?: number
+  mimeType?: string
+  createdAt: string
+  uploader: {
+    id: string
+    username: string
+    firstName?: string
+    lastName?: string
+  }
+}
+
 interface Task {
   id: string
   title: string
@@ -40,6 +56,7 @@ interface Task {
   assignee: User | null
   team: Team | null
   comments: Comment[]
+  attachments: Attachment[]
   createdAt: string
   updatedAt: string
 }
@@ -456,6 +473,31 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
                 No comments yet. Be the first to comment!
               </div>
             )}
+          </div>
+
+          {/* Attachments */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">
+              Attachments ({task.attachments.length})
+            </h2>
+
+            {/* Upload Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Upload Files</h3>
+              <FileUpload
+                taskId={task.id}
+                onUploadSuccess={() => fetchTask()}
+                className="border border-gray-300 rounded-lg p-4"
+              />
+            </div>
+
+            {/* Attachments List */}
+            <div>
+              <AttachmentList
+                attachments={task.attachments}
+                canDelete={canEdit || task.attachments.some(att => att.uploader.id === session?.user?.id)}
+              />
+            </div>
           </div>
         </div>
 

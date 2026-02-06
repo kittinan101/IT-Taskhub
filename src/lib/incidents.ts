@@ -22,6 +22,19 @@ export interface IncidentWithDetails {
     role?: string
   } | null
   comments?: IncidentComment[]
+  attachments?: {
+    id: string
+    filename: string
+    size?: number
+    mimeType?: string
+    createdAt: Date
+    uploader: {
+      id: string
+      username: string
+      firstName?: string
+      lastName?: string
+    }
+  }[]
   _count?: {
     comments: number
   }

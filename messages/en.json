@@ -1,0 +1,148 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions",
+    "yes": "Yes",
+    "no": "No",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "navigation": {
+    "dashboard": "Dashboard",
+    "tasks": "Tasks",
+    "incidents": "Incidents",
+    "users": "Users",
+    "teams": "Teams",
+    "projects": "Projects",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Sign In",
+    "loginError": "Invalid username or password"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "myTasks": "My Tasks",
+    "recentIncidents": "Recent Incidents",
+    "teamActivity": "Team Activity",
+    "statistics": "Statistics"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "newTask": "New Task",
+    "taskTitle": "Title",
+    "description": "Description",
+    "status": "Status",
+    "priority": "Priority",
+    "assignee": "Assignee",
+    "dueDate": "Due Date",
+    "project": "Project",
+    "sprint": "Sprint",
+    "estimatedHours": "Estimated Hours",
+    "actualHours": "Actual Hours",
+    "comments": "Comments",
+    "addComment": "Add Comment",
+    "noTasks": "No tasks found",
+    "statusOptions": {
+      "TODO": "To Do",
+      "IN_PROGRESS": "In Progress",
+      "DONE": "Done"
+    },
+    "priorityOptions": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "URGENT": "Urgent"
+    }
+  },
+  "incidents": {
+    "title": "Incidents",
+    "newIncident": "New Incident",
+    "incidentTitle": "Title",
+    "description": "Description",
+    "system": "System",
+    "environment": "Environment",
+    "tier": "Tier",
+    "status": "Status",
+    "assignee": "Assignee",
+    "comments": "Comments",
+    "addComment": "Add Comment",
+    "noIncidents": "No incidents found",
+    "environmentOptions": {
+      "PRODUCTION": "Production",
+      "STAGING": "Staging",
+      "DEV": "Development"
+    },
+    "tierOptions": {
+      "CRITICAL": "Critical",
+      "MAJOR": "Major",
+      "MINOR": "Minor"
+    },
+    "statusOptions": {
+      "OPEN": "Open",
+      "INVESTIGATING": "Investigating",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed"
+    }
+  },
+  "users": {
+    "title": "Users",
+    "newUser": "New User",
+    "username": "Username",
+    "email": "Email",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "role": "Role",
+    "team": "Team",
+    "isActive": "Active",
+    "noUsers": "No users found",
+    "roleOptions": {
+      "ADMIN": "Administrator",
+      "PM": "Project Manager",
+      "BA": "Business Analyst",
+      "DEVELOPER": "Developer",
+      "QA": "Quality Assurance"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageOptions": {
+      "en": "English",
+      "th": "Thai"
+    },
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "notifications": "Notifications"
+  },
+  "validation": {
+    "required": "This field is required",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordTooShort": "Password must be at least 8 characters",
+    "usernameTooShort": "Username must be at least 3 characters"
+  },
+  "messages": {
+    "success": {
+      "created": "Successfully created",
+      "updated": "Successfully updated",
+      "deleted": "Successfully deleted"
+    },
+    "error": {
+      "general": "An error occurred. Please try again.",
+      "notFound": "Resource not found",
+      "unauthorized": "You are not authorized to perform this action"
+    }
+  }
+}
