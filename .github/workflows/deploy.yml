@@ -93,11 +93,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via Portainer Webhook (UAT)
-        if: ${{ secrets.PORTAINER_WEBHOOK_URL_UAT != '' }}
+        env:
+          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL_UAT }}
         run: |
-          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL_UAT }}" \
-            -H "Content-Type: application/json" \
-            --fail --silent --show-error || echo "Webhook not configured"
+          if [ -n "$WEBHOOK_URL" ]; then
+            curl -X POST "$WEBHOOK_URL" -H "Content-Type: application/json" --fail --silent --show-error
+          else
+            echo "UAT Webhook not configured, skipping deploy"
+          fi
 
   deploy-prod:
     name: Deploy to Production
@@ -106,8 +109,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via Portainer Webhook (Production)
-        if: ${{ secrets.PORTAINER_WEBHOOK_URL != '' }}
+        env:
+          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
         run: |
-          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            --fail --silent --show-error || echo "Webhook not configured"
+          if [ -n "$WEBHOOK_URL" ]; then
+            curl -X POST "$WEBHOOK_URL" -H "Content-Type: application/json" --fail --silent --show-error
+          else
+            echo "Production Webhook not configured, skipping deploy"
+          fi
