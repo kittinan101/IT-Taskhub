@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   app:
-    image: ghcr.io/kittinan101/it-taskhub:latest
+    image: 899522950715.dkr.ecr.ap-southeast-1.amazonaws.com/it-taskhub:${IMAGE_TAG:-latest}
     container_name: it-taskhub
     restart: unless-stopped
     ports:
