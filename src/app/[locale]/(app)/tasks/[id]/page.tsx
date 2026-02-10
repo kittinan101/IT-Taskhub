@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import { TaskStatus, TaskPriority, Role } from "@prisma/client"
 import FileUpload from "@/components/ui/FileUpload"
@@ -91,7 +91,8 @@ const getUserDisplayName = (user: User | null) => {
     : user.username
 }
 
-export default function TaskDetailPage({ params }: { params: { id: string } }) {
+export default function TaskDetailPage() {
+  const params = useParams<{ id: string }>()
   const { data: session } = useSession()
   const router = useRouter()
   const [task, setTask] = useState<Task | null>(null)
