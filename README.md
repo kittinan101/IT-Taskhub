@@ -144,6 +144,77 @@ docker run -p 3000:3000 \
 
 Container runs `prisma migrate deploy` on startup.
 
+## Portainer Stack Examples
+
+### Dev Stack
+
+```yaml
+version: '3.8'
+services:
+  it-taskhub:
+    image: 899522950715.dkr.ecr.ap-southeast-1.amazonaws.com/it-taskhub:develop
+    ports:
+      - "3002:3000"
+    environment:
+      - DATABASE_URL=postgresql://admin1234:***@postgres.holmcloud.net:5433/it_taskhub_dev
+      - NEXTAUTH_SECRET=your-secret-here
+      - NEXTAUTH_URL=https://dev.taskhub.holmcloud.net
+      - API_KEYS=dev-api-key
+    networks:
+      - nginx-proxy_default
+    restart: unless-stopped
+
+networks:
+  nginx-proxy_default:
+    external: true
+```
+
+### UAT Stack
+
+```yaml
+version: '3.8'
+services:
+  it-taskhub:
+    image: 899522950715.dkr.ecr.ap-southeast-1.amazonaws.com/it-taskhub:uat
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgresql://admin1234:***@postgres.holmcloud.net:5433/it_taskhub_uat
+      - NEXTAUTH_SECRET=your-secret-here
+      - NEXTAUTH_URL=https://uat.taskhub.holmcloud.net
+      - API_KEYS=uat-api-key
+    networks:
+      - nginx-proxy_default
+    restart: unless-stopped
+
+networks:
+  nginx-proxy_default:
+    external: true
+```
+
+### Production Stack
+
+```yaml
+version: '3.8'
+services:
+  it-taskhub:
+    image: 899522950715.dkr.ecr.ap-southeast-1.amazonaws.com/it-taskhub:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://admin1234:***@postgres.holmcloud.net:5433/it_taskhub
+      - NEXTAUTH_SECRET=your-secret-here
+      - NEXTAUTH_URL=https://taskhub.holmcloud.net
+      - API_KEYS=prod-api-key
+    networks:
+      - nginx-proxy_default
+    restart: unless-stopped
+
+networks:
+  nginx-proxy_default:
+    external: true
+```
+
 ## External API
 
 ### Create Incident
