@@ -1,7 +1,10 @@
+"use client"
+
 import React from 'react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ClockIcon, CalendarIcon } from '@heroicons/react/24/outline'
+import { useLocalePath } from '@/lib/navigation'
 
 interface TaskCardProps {
   task: {
@@ -54,6 +57,7 @@ const statusColors = {
 }
 
 export default function TaskCard({ task, onStatusChange, className = '' }: TaskCardProps) {
+  const { localePath } = useLocalePath()
   const displayName = task.assignee
     ? `${task.assignee.firstName || ''} ${task.assignee.lastName || ''}`.trim() || task.assignee.username
     : 'Unassigned'
@@ -70,7 +74,7 @@ export default function TaskCard({ task, onStatusChange, className = '' }: TaskC
         ${className}
       `}
     >
-      <Link href={`/tasks/${task.id}`}>
+      <Link href={localePath(`/tasks/${task.id}`)}>
         <div className="p-4 space-y-3">
           {/* Header with Priority & Project */}
           <div className="flex items-start justify-between">

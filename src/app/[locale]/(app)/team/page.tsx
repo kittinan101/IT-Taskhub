@@ -201,7 +201,7 @@ export default function TeamPage() {
     setShowEditModal(true)
   }
 
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = (users || []).filter((user) => {
     if (filterRole !== "all" && user.role !== filterRole) return false
     if (filterStatus !== "all") {
       if (filterStatus === "active" && !user.isActive) return false
@@ -255,7 +255,7 @@ export default function TeamPage() {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
             >
               <option value="all">All Roles</option>
               <option value="ADMIN">Admin</option>
@@ -273,7 +273,7 @@ export default function TeamPage() {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -290,7 +290,7 @@ export default function TeamPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search users..."
-              className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-400"
             />
           </div>
         </div>
@@ -311,7 +311,7 @@ export default function TeamPage() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                  <dd className="text-lg font-medium text-gray-900">{users.length}</dd>
+                  <dd className="text-lg font-medium text-gray-900">{(users || []).length}</dd>
                 </dl>
               </div>
             </div>
@@ -332,7 +332,7 @@ export default function TeamPage() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Active Users</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {users.filter(u => u.isActive).length}
+                    {(users || []).filter(u => u.isActive).length}
                   </dd>
                 </dl>
               </div>
@@ -354,7 +354,7 @@ export default function TeamPage() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Admins</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {users.filter(u => u.role === "ADMIN").length}
+                    {(users || []).filter(u => u.role === "ADMIN").length}
                   </dd>
                 </dl>
               </div>
@@ -377,7 +377,7 @@ export default function TeamPage() {
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">Developers</dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {users.filter(u => u.role === "DEVELOPER").length}
+                    {(users || []).filter(u => u.role === "DEVELOPER").length}
                   </dd>
                 </dl>
               </div>
@@ -525,7 +525,7 @@ export default function TeamPage() {
                     required
                     value={addUserData.username}
                     onChange={(e) => setAddUserData({...addUserData, username: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -535,7 +535,7 @@ export default function TeamPage() {
                     required
                     value={addUserData.firstName}
                     onChange={(e) => setAddUserData({...addUserData, firstName: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -545,7 +545,7 @@ export default function TeamPage() {
                     required
                     value={addUserData.lastName}
                     onChange={(e) => setAddUserData({...addUserData, lastName: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -554,7 +554,7 @@ export default function TeamPage() {
                     type="email"
                     value={addUserData.email}
                     onChange={(e) => setAddUserData({...addUserData, email: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -564,7 +564,7 @@ export default function TeamPage() {
                     required
                     value={addUserData.password}
                     onChange={(e) => setAddUserData({...addUserData, password: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -573,7 +573,7 @@ export default function TeamPage() {
                     required
                     value={addUserData.role}
                     onChange={(e) => setAddUserData({...addUserData, role: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   >
                     <option value="ADMIN">Admin</option>
                     <option value="PM">PM</option>
@@ -618,7 +618,7 @@ export default function TeamPage() {
                     type="text"
                     value={editUserData.firstName}
                     onChange={(e) => setEditUserData({...editUserData, firstName: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -627,7 +627,7 @@ export default function TeamPage() {
                     type="text"
                     value={editUserData.lastName}
                     onChange={(e) => setEditUserData({...editUserData, lastName: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div>
@@ -636,7 +636,7 @@ export default function TeamPage() {
                     type="email"
                     value={editUserData.email}
                     onChange={(e) => setEditUserData({...editUserData, email: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                   />
                 </div>
                 <div className="flex justify-end space-x-3 pt-4">

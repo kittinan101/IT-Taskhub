@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useLocalePath } from "@/lib/navigation"
 
 interface ApiEndpoint {
   method: string
@@ -189,6 +190,7 @@ const API_ENDPOINTS: ApiEndpoint[] = [
 ]
 
 export default function ApiDocsPage() {
+  const { localePath } = useLocalePath()
   const [activeEndpoint, setActiveEndpoint] = useState<number>(0)
 
   return (
@@ -197,7 +199,7 @@ export default function ApiDocsPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-            <Link href="/incidents" className="hover:text-gray-700">
+            <Link href={localePath("/incidents")} className="hover:text-gray-700">
               Incidents
             </Link>
             <span>→</span>
@@ -209,7 +211,7 @@ export default function ApiDocsPage() {
           </p>
         </div>
         <Link
-          href="/incidents"
+          href={localePath("/incidents")}
           className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200"
         >
           Back to Incidents

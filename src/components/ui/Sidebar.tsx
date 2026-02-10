@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useLocalePath } from '@/lib/navigation'
 import { 
   ChartBarIcon,
   ListBulletIcon,
@@ -33,6 +34,7 @@ interface NavigationItem {
 
 export default function Sidebar({ className = '' }: SidebarProps) {
   const pathname = usePathname()
+  const { localePath } = useLocalePath()
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     tasks: true,
     incidents: true,
@@ -49,57 +51,57 @@ export default function Sidebar({ className = '' }: SidebarProps) {
   const navigation: NavigationItem[] = [
     {
       name: 'Dashboard',
-      href: '/dashboard',
+      href: localePath('/dashboard'),
       icon: ChartBarIcon,
-      current: pathname === '/dashboard'
+      current: pathname.includes('/dashboard')
     },
     {
       name: 'Tasks',
-      href: '/tasks',
+      href: localePath('/tasks'),
       icon: ListBulletIcon,
-      current: pathname.startsWith('/tasks'),
+      current: pathname.includes('/tasks'),
       children: [
-        { name: 'Board View', href: '/tasks', icon: ViewColumnsIcon },
-        { name: 'List View', href: '/tasks?view=list', icon: ListBulletIcon },
-        { name: 'Calendar', href: '/tasks?view=calendar', icon: CalendarIcon },
-        { name: 'My Tasks', href: '/tasks?assignee=me', icon: FlagIcon },
+        { name: 'Board View', href: localePath('/tasks'), icon: ViewColumnsIcon },
+        { name: 'List View', href: localePath('/tasks?view=list'), icon: ListBulletIcon },
+        { name: 'Calendar', href: localePath('/tasks?view=calendar'), icon: CalendarIcon },
+        { name: 'My Tasks', href: localePath('/tasks?assignee=me'), icon: FlagIcon },
       ]
     },
     {
       name: 'Incidents',
-      href: '/incidents',
+      href: localePath('/incidents'),
       icon: ExclamationTriangleIcon,
-      current: pathname.startsWith('/incidents'),
+      current: pathname.includes('/incidents'),
       badge: '3', // Could be dynamic
       children: [
-        { name: 'Active', href: '/incidents', icon: ClockIcon },
-        { name: 'Dashboard', href: '/incidents/dashboard', icon: ChartPieIcon },
-        { name: 'History', href: '/incidents/history', icon: ClockIcon },
-        { name: 'API Docs', href: '/incidents/api-docs', icon: DocumentTextIcon },
+        { name: 'Active', href: localePath('/incidents'), icon: ClockIcon },
+        { name: 'Dashboard', href: localePath('/incidents/dashboard'), icon: ChartPieIcon },
+        { name: 'History', href: localePath('/incidents/history'), icon: ClockIcon },
+        { name: 'API Docs', href: localePath('/incidents/api-docs'), icon: DocumentTextIcon },
       ]
     },
     {
       name: 'Projects',
-      href: '/projects',
+      href: localePath('/projects'),
       icon: FolderIcon,
-      current: pathname.startsWith('/projects'),
+      current: pathname.includes('/projects'),
       children: [
-        { name: 'All Projects', href: '/projects', icon: FolderIcon },
-        { name: 'Sprints', href: '/projects/sprints', icon: CalendarIcon },
-        { name: 'Analytics', href: '/projects/analytics', icon: ChartBarIcon },
+        { name: 'All Projects', href: localePath('/projects'), icon: FolderIcon },
+        { name: 'Sprints', href: localePath('/projects/sprints'), icon: CalendarIcon },
+        { name: 'Analytics', href: localePath('/projects/analytics'), icon: ChartBarIcon },
       ]
     },
     {
       name: 'Team',
-      href: '/team',
+      href: localePath('/team'),
       icon: UsersIcon,
-      current: pathname === '/team'
+      current: pathname.includes('/team')
     },
     {
       name: 'Settings',
-      href: '/settings',
+      href: localePath('/settings'),
       icon: Cog6ToothIcon,
-      current: pathname.startsWith('/settings')
+      current: pathname.includes('/settings')
     }
   ]
 

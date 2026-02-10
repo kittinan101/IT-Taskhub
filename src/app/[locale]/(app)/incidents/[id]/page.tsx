@@ -21,11 +21,13 @@ import {
 } from "@/lib/incidents"
 import FileUpload from "@/components/ui/FileUpload"
 import AttachmentList from "@/components/ui/AttachmentList"
+import { useLocalePath } from "@/lib/navigation"
 
 export default function IncidentDetailPage() {
   const { data: session } = useSession()
   const params = useParams()
   // const router = useRouter() // TODO: Add navigation features
+  const { localePath } = useLocalePath()
   const incidentId = params.id as string
 
   const [incident, setIncident] = useState<IncidentWithDetails | null>(null)
@@ -195,7 +197,7 @@ export default function IncidentDetailPage() {
         </div>
         <div className="mt-2">
           <Link
-            href="/incidents"
+            href={localePath("/incidents")}
             className="text-sm text-red-600 hover:text-red-900 underline"
           >
             ← Back to incidents
@@ -211,7 +213,7 @@ export default function IncidentDetailPage() {
         <div className="text-gray-500">Incident not found.</div>
         <div className="mt-2">
           <Link
-            href="/incidents"
+            href={localePath("/incidents")}
             className="text-blue-600 hover:text-blue-900 underline"
           >
             ← Back to incidents
@@ -233,7 +235,7 @@ export default function IncidentDetailPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-            <Link href="/incidents" className="hover:text-gray-700">
+            <Link href={localePath("/incidents")} className="hover:text-gray-700">
               Incidents
             </Link>
             <span>→</span>
@@ -341,7 +343,7 @@ export default function IncidentDetailPage() {
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     rows={3}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-gray-900"
                     placeholder="Add a comment..."
                     disabled={updating}
                   />
@@ -360,8 +362,8 @@ export default function IncidentDetailPage() {
 
             {/* Comments List */}
             <div className="space-y-4">
-              {incident.comments && incident.comments.length > 0 ? (
-                incident.comments.map((comment: IncidentComment) => (
+              {(incident.comments || []).length > 0 ? (
+                (incident.comments || []).map((comment: IncidentComment) => (
                   <div key={comment.id} className="flex space-x-3">
                     <div className="flex-shrink-0">
                       <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
@@ -416,7 +418,7 @@ export default function IncidentDetailPage() {
                 })) || []}
                 canDelete={session?.user?.role === 'ADMIN' || 
                           incident.assigneeId === session?.user?.id ||
-                          incident.attachments?.some(att => att.uploader.id === session?.user?.id)}
+                          (incident.attachments || []).some(att => att.uploader.id === session?.user?.id)}
               />
             </div>
           </div>
@@ -432,7 +434,7 @@ export default function IncidentDetailPage() {
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
                   disabled={updating}
                 >
                   <option value="OPEN">Open</option>
@@ -461,11 +463,11 @@ export default function IncidentDetailPage() {
                 <select
                   value={selectedAssignee}
                   onChange={(e) => setSelectedAssignee(e.target.value)}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
                   disabled={updating}
                 >
                   <option value="">Unassigned</option>
-                  {users.map((user) => (
+                  {(users || []).map((user) => (
                     <option key={user.id} value={user.id}>
                       {getDisplayName(user)} ({user.role})
                     </option>

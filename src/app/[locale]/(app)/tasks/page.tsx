@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { TaskStatus, TaskPriority, Role } from "@prisma/client"
+import { useLocalePath } from "@/lib/navigation"
 
 interface Team {
   id: string
@@ -75,6 +76,7 @@ const getUserDisplayName = (user: User | null) => {
 
 export default function TasksPage() {
   const { data: session } = useSession()
+  const { localePath } = useLocalePath()
   const [view, setView] = useState<"list" | "board">("list")
   const [tasks, setTasks] = useState<Task[]>([])
   const [users, setUsers] = useState<User[]>([])
@@ -253,7 +255,7 @@ export default function TasksPage() {
           </div>
           {canCreateTask && (
             <Link
-              href="/tasks/new"
+              href={localePath("/tasks/new")}
               className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
             >
               New Task
@@ -306,7 +308,7 @@ export default function TasksPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             >
               <option value="">All Assignees</option>
-              {users.map((user) => (
+              {(users || []).map((user) => (
                 <option key={user.id} value={user.id}>
                   {getUserDisplayName(user)}
                 </option>
@@ -320,7 +322,7 @@ export default function TasksPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             >
               <option value="">All Teams</option>
-              {teams.map((team) => (
+              {(teams || []).map((team) => (
                 <option key={team.id} value={team.id}>
                   {team.name}
                 </option>
@@ -372,7 +374,7 @@ export default function TasksPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {tasks.map((task) => (
+                  {(tasks || []).map((task) => (
                     <tr key={task.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
@@ -431,7 +433,7 @@ export default function TasksPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Link
-                          href={`/tasks/${task.id}`}
+                          href={localePath(`/tasks/${task.id}`)}
                           className="text-blue-600 hover:text-blue-900 mr-3"
                         >
                           View
@@ -492,17 +494,17 @@ export default function TasksPage() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4">
                   {status.replace("_", " ")}
                   <span className="ml-2 text-sm text-gray-500">
-                    ({tasks.filter((task) => task.status === status).length})
+                    ({(tasks || []).filter((task) => task.status === status).length})
                   </span>
                 </h3>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {tasks
+                  {(tasks || [])
                     .filter((task) => task.status === status)
                     .map((task) => (
                       <div
                         key={task.id}
                         className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md cursor-pointer"
-                        onClick={() => window.location.href = `/tasks/${task.id}`}
+                        onClick={() => window.location.href = localePath(`/tasks/${task.id}`)}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="text-sm font-medium text-gray-900 truncate">

@@ -11,6 +11,7 @@ import {
   getDisplayName,
   formatDate
 } from "@/lib/incidents"
+import { useLocalePath } from "@/lib/navigation"
 
 interface IncidentsResponse {
   incidents: IncidentWithDetails[]
@@ -24,6 +25,7 @@ interface IncidentsResponse {
 
 export default function IncidentsPage() {
   const { data: session } = useSession()
+  const { localePath } = useLocalePath()
   const [incidents, setIncidents] = useState<IncidentWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -97,13 +99,13 @@ export default function IncidentsPage() {
         </div>
         <div className="flex items-center space-x-4">
           <Link
-            href="/incidents/dashboard"
+            href={localePath("/incidents/dashboard")}
             className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200"
           >
             Dashboard
           </Link>
           <Link
-            href="/incidents/api-docs"
+            href={localePath("/incidents/api-docs")}
             className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200"
           >
             API Docs
@@ -124,7 +126,7 @@ export default function IncidentsPage() {
                 setFilterStatus(e.target.value)
                 setPagination(prev => ({ ...prev, page: 1 }))
               }}
-              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="OPEN">Open</option>
@@ -144,7 +146,7 @@ export default function IncidentsPage() {
                 setFilterTier(e.target.value)
                 setPagination(prev => ({ ...prev, page: 1 }))
               }}
-              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
             >
               <option value="all">All Tiers</option>
               <option value="CRITICAL">Critical</option>
@@ -163,7 +165,7 @@ export default function IncidentsPage() {
                 setFilterEnvironment(e.target.value)
                 setPagination(prev => ({ ...prev, page: 1 }))
               }}
-              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-40 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
             >
               <option value="all">All Environments</option>
               <option value="PRODUCTION">Production</option>
@@ -184,7 +186,7 @@ export default function IncidentsPage() {
                 setPagination(prev => ({ ...prev, page: 1 }))
               }}
               placeholder="Filter by system..."
-              className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              className="block w-48 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
             />
           </div>
 
@@ -248,7 +250,7 @@ export default function IncidentsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {incidents.map((incident) => (
+                    {(incidents || []).map((incident) => (
                       <tr key={incident.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
                           <div>
@@ -310,7 +312,7 @@ export default function IncidentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <Link
-                            href={`/incidents/${incident.id}`}
+                            href={localePath(`/incidents/${incident.id}`)}
                             className="text-blue-600 hover:text-blue-900"
                           >
                             View

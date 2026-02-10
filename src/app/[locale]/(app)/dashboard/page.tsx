@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useLocalePath } from "@/lib/navigation"
 
 interface DashboardData {
   overview: {
@@ -90,6 +91,7 @@ const tierColors = {
 
 export default function DashboardPage() {
   const { data: session } = useSession()
+  const { localePath } = useLocalePath()
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -166,7 +168,7 @@ export default function DashboardPage() {
           </div>
           <div className="bg-gray-50 px-5 py-3">
             <div className="text-sm">
-              <Link href="/tasks" className="font-medium text-blue-700 hover:text-blue-900">
+              <Link href={localePath("/tasks")} className="font-medium text-blue-700 hover:text-blue-900">
                 View all tasks
               </Link>
             </div>
@@ -220,7 +222,7 @@ export default function DashboardPage() {
           </div>
           <div className="bg-gray-50 px-5 py-3">
             <div className="text-sm">
-              <Link href="/incidents" className="font-medium text-orange-700 hover:text-orange-900">
+              <Link href={localePath("/incidents")} className="font-medium text-orange-700 hover:text-orange-900">
                 View all incidents
               </Link>
             </div>
@@ -248,7 +250,7 @@ export default function DashboardPage() {
           </div>
           <div className="bg-gray-50 px-5 py-3">
             <div className="text-sm">
-              <Link href="/team" className="font-medium text-green-700 hover:text-green-900">
+              <Link href={localePath("/team")} className="font-medium text-green-700 hover:text-green-900">
                 Manage team
               </Link>
             </div>
@@ -262,10 +264,10 @@ export default function DashboardPage() {
           <div className="px-4 py-5 sm:p-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">My Assigned Tasks</h3>
             <div className="space-y-3">
-              {dashboardData?.myAssignedTasks.length === 0 ? (
+              {(dashboardData?.myAssignedTasks || []).length === 0 ? (
                 <p className="text-gray-500 text-sm">No tasks assigned to you</p>
               ) : (
-                dashboardData?.myAssignedTasks.map((task) => (
+                (dashboardData?.myAssignedTasks || []).map((task) => (
                   <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{task.title}</p>
@@ -288,7 +290,7 @@ export default function DashboardPage() {
               )}
             </div>
             <div className="mt-4">
-              <Link href="/tasks" className="text-sm text-blue-600 hover:text-blue-800">
+              <Link href={localePath("/tasks")} className="text-sm text-blue-600 hover:text-blue-800">
                 View all my tasks →
               </Link>
             </div>
@@ -301,7 +303,7 @@ export default function DashboardPage() {
             <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Recent Activity</h3>
             <div className="space-y-4">
               {/* Recent Tasks */}
-              {dashboardData?.recentTasks.slice(0, 3).map((task) => (
+              {(dashboardData?.recentTasks || []).slice(0, 3).map((task) => (
                 <div key={task.id} className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     <div className="w-2 h-2 bg-blue-400 rounded-full mt-2"></div>
@@ -319,7 +321,7 @@ export default function DashboardPage() {
               ))}
               
               {/* Recent Incidents */}
-              {dashboardData?.recentIncidents.slice(0, 2).map((incident) => (
+              {(dashboardData?.recentIncidents || []).slice(0, 2).map((incident) => (
                 <div key={incident.id} className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     <div className="w-2 h-2 bg-red-400 rounded-full mt-2"></div>
@@ -339,7 +341,7 @@ export default function DashboardPage() {
               ))}
             </div>
             <div className="mt-4">
-              <Link href="/incidents" className="text-sm text-blue-600 hover:text-blue-800">
+              <Link href={localePath("/incidents")} className="text-sm text-blue-600 hover:text-blue-800">
                 View all activity →
               </Link>
             </div>

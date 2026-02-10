@@ -1,3 +1,5 @@
+"use client"
+
 import React from 'react'
 import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
@@ -9,6 +11,7 @@ import {
   CheckCircleIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline'
+import { useLocalePath } from '@/lib/navigation'
 
 interface IncidentListProps {
   incidents: Array<{
@@ -72,6 +75,8 @@ const environmentColors = {
 }
 
 export default function IncidentList({ incidents, onStatusChange, className = '' }: IncidentListProps) {
+  const { localePath } = useLocalePath()
+  
   if (!incidents.length) {
     return (
       <div className="text-center py-12">
@@ -100,7 +105,7 @@ export default function IncidentList({ incidents, onStatusChange, className = ''
         const isEscalated = incident.escalationLevel > 0
 
         return (
-          <Link key={incident.id} href={`/incidents/${incident.id}`}>
+          <Link key={incident.id} href={localePath(`/incidents/${incident.id}`)}>
             <div className={`
               incident-row p-4 border rounded-lg transition-all duration-200
               hover:shadow-md hover:bg-gray-50 cursor-pointer

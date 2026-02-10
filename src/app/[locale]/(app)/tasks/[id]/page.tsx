@@ -7,6 +7,7 @@ import Link from "next/link"
 import { TaskStatus, TaskPriority, Role } from "@prisma/client"
 import FileUpload from "@/components/ui/FileUpload"
 import AttachmentList from "@/components/ui/AttachmentList"
+import { useLocalePath } from "@/lib/navigation"
 
 interface User {
   id: string
@@ -95,6 +96,7 @@ export default function TaskDetailPage() {
   const params = useParams<{ id: string }>()
   const { data: session } = useSession()
   const router = useRouter()
+  const { localePath } = useLocalePath()
   const [task, setTask] = useState<Task | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [teams, setTeams] = useState<Team[]>([])
@@ -250,7 +252,7 @@ export default function TaskDetailPage() {
       }
 
       alert('Task deleted successfully')
-      router.push('/tasks')
+      router.push(localePath('/tasks'))
     } catch (err) {
       console.error('Failed to delete task:', err)
       alert(err instanceof Error ? err.message : 'Failed to delete task')
@@ -273,7 +275,7 @@ export default function TaskDetailPage() {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">Error: {error}</div>
-        <Link href="/tasks" className="text-blue-600 hover:text-blue-800">
+        <Link href={localePath("/tasks")} className="text-blue-600 hover:text-blue-800">
           Back to Tasks
         </Link>
       </div>
@@ -284,7 +286,7 @@ export default function TaskDetailPage() {
     return (
       <div className="text-center py-8">
         <div className="text-gray-600 mb-4">Task not found</div>
-        <Link href="/tasks" className="text-blue-600 hover:text-blue-800">
+        <Link href={localePath("/tasks")} className="text-blue-600 hover:text-blue-800">
           Back to Tasks
         </Link>
       </div>
@@ -306,7 +308,7 @@ export default function TaskDetailPage() {
           <nav className="flex mb-4" aria-label="Breadcrumb">
             <ol className="flex items-center space-x-4">
               <li>
-                <Link href="/tasks" className="text-gray-500 hover:text-gray-700">
+                <Link href={localePath("/tasks")} className="text-gray-500 hover:text-gray-700">
                   Tasks
                 </Link>
               </li>
@@ -420,7 +422,7 @@ export default function TaskDetailPage() {
           {/* Comments */}
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">
-              Comments ({task.comments.length})
+              Comments ({(task.comments || []).length})
             </h2>
 
             {/* Add Comment */}
@@ -449,7 +451,7 @@ export default function TaskDetailPage() {
 
             {/* Comments List */}
             <div className="space-y-4">
-              {task.comments.map((comment) => (
+              {(task.comments || []).map((comment) => (
                 <div key={comment.id} className="border-l-4 border-gray-200 pl-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm font-medium text-gray-900">
@@ -469,7 +471,7 @@ export default function TaskDetailPage() {
               ))}
             </div>
 
-            {task.comments.length === 0 && (
+            {(task.comments || []).length === 0 && (
               <div className="text-center text-gray-500 py-4">
                 No comments yet. Be the first to comment!
               </div>
@@ -479,7 +481,7 @@ export default function TaskDetailPage() {
           {/* Attachments */}
           <div className="bg-white shadow rounded-lg p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">
-              Attachments ({task.attachments.length})
+              Attachments ({(task.attachments || []).length})
             </h2>
 
             {/* Upload Section */}
@@ -496,7 +498,7 @@ export default function TaskDetailPage() {
             <div>
               <AttachmentList
                 attachments={task.attachments}
-                canDelete={canEdit || task.attachments.some(att => att.uploader.id === session?.user?.id)}
+                canDelete={canEdit || (task.attachments || []).some(att => att.uploader.id === session?.user?.id)}
               />
             </div>
           </div>
@@ -573,7 +575,7 @@ export default function TaskDetailPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   >
                     <option value="">Unassigned</option>
-                    {users.map((user) => (
+                    {(users || []).map((user) => (
                       <option key={user.id} value={user.id}>
                         {getUserDisplayName(user)} ({user.role})
                       </option>
@@ -603,7 +605,7 @@ export default function TaskDetailPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                   >
                     <option value="">No Team</option>
-                    {teams.map((team) => (
+                    {(teams || []).map((team) => (
                       <option key={team.id} value={team.id}>
                         {team.name}
                       </option>

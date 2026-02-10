@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { TaskPriority, Role } from "@prisma/client"
+import { useLocalePath } from "@/lib/navigation"
 
 interface User {
   id: string
@@ -32,6 +33,7 @@ const getUserDisplayName = (user: User | null) => {
 export default function NewTaskPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const { localePath } = useLocalePath()
   
   const [users, setUsers] = useState<User[]>([])
   const [teams, setTeams] = useState<Team[]>([])
@@ -106,7 +108,7 @@ export default function NewTaskPage() {
       }
 
       const task = await response.json()
-      router.push(`/tasks/${task.id}`)
+      router.push(localePath(`/tasks/${task.id}`))
     } catch (err) {
       console.error('Failed to create task:', err)
       setError(err instanceof Error ? err.message : 'Failed to create task')
@@ -133,7 +135,7 @@ export default function NewTaskPage() {
     return (
       <div className="text-center py-8">
         <div className="text-red-600 mb-4">You don&apos;t have permission to create tasks.</div>
-        <Link href="/tasks" className="text-blue-600 hover:text-blue-800">
+        <Link href={localePath("/tasks")} className="text-blue-600 hover:text-blue-800">
           Back to Tasks
         </Link>
       </div>
@@ -147,7 +149,7 @@ export default function NewTaskPage() {
         <nav className="flex mb-4" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-4">
             <li>
-              <Link href="/tasks" className="text-gray-500 hover:text-gray-700">
+              <Link href={localePath("/tasks")} className="text-gray-500 hover:text-gray-700">
                 Tasks
               </Link>
             </li>
@@ -236,7 +238,7 @@ export default function NewTaskPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select assignee...</option>
-                  {users.map((user) => (
+                  {(users || []).map((user) => (
                     <option key={user.id} value={user.id}>
                       {getUserDisplayName(user)} ({user.role})
                     </option>
@@ -260,7 +262,7 @@ export default function NewTaskPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select team...</option>
-                  {teams.map((team) => (
+                  {(teams || []).map((team) => (
                     <option key={team.id} value={team.id}>
                       {team.name}
                     </option>
@@ -299,7 +301,7 @@ export default function NewTaskPage() {
           {/* Form Actions */}
           <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
             <Link
-              href="/tasks"
+              href={localePath("/tasks")}
               className="bg-gray-300 text-gray-700 px-6 py-2 rounded-md text-sm font-medium hover:bg-gray-400"
             >
               Cancel

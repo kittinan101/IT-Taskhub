@@ -8,11 +8,5 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <html>
-      <body className={inter.className}>
-        {children}
-      </body>
-    </html>
-  )
+  return children
 }

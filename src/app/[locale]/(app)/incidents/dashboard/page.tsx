@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
+import { useLocalePath } from "@/lib/navigation"
 import {
   BarChart,
   Bar,
@@ -41,6 +42,7 @@ const ENV_COLORS = {
 
 export default function IncidentDashboardPage() {
   const { data: session } = useSession()
+  const { localePath } = useLocalePath()
   const [summary, setSummary] = useState<IncidentSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -90,7 +92,7 @@ export default function IncidentDashboardPage() {
         </div>
         <div className="mt-2">
           <Link
-            href="/incidents"
+            href={localePath("/incidents")}
             className="text-sm text-red-600 hover:text-red-900 underline"
           >
             ← Back to incidents
@@ -100,17 +102,17 @@ export default function IncidentDashboardPage() {
     )
   }
 
-  const pieDataForStatus = summary.distributions.status.map(item => ({
+  const pieDataForStatus = (summary.distributions?.status || []).map(item => ({
     ...item,
     fill: STATUS_COLORS[item.name as keyof typeof STATUS_COLORS] || "#6B7280"
   }))
 
-  const pieDataForTier = summary.distributions.tier.map(item => ({
+  const pieDataForTier = (summary.distributions?.tier || []).map(item => ({
     ...item,
     fill: TIER_COLORS[item.name as keyof typeof TIER_COLORS] || "#6B7280"
   }))
 
-  const pieDataForEnv = summary.distributions.environment.map(item => ({
+  const pieDataForEnv = (summary.distributions?.environment || []).map(item => ({
     ...item,
     fill: ENV_COLORS[item.name as keyof typeof ENV_COLORS] || "#6B7280"
   }))
@@ -121,7 +123,7 @@ export default function IncidentDashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-            <Link href="/incidents" className="hover:text-gray-700">
+            <Link href={localePath("/incidents")} className="hover:text-gray-700">
               Incidents
             </Link>
             <span>→</span>
@@ -133,14 +135,14 @@ export default function IncidentDashboardPage() {
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(Number(e.target.value))}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
           >
             <option value={7}>Last 7 days</option>
             <option value={30}>Last 30 days</option>
             <option value={90}>Last 90 days</option>
           </select>
           <Link
-            href="/incidents"
+            href={localePath("/incidents")}
             className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
           >
             View All Incidents
@@ -292,7 +294,7 @@ export default function IncidentDashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Top Problematic Systems</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={summary.distributions.systems} layout="horizontal">
+            <BarChart data={summary.distributions?.systems || []} layout="horizontal">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
               <YAxis dataKey="name" type="category" width={80} />
@@ -307,7 +309,7 @@ export default function IncidentDashboardPage() {
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Incident Trends (Last {timeRange} days)</h3>
         <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={summary.trends}>
+          <LineChart data={summary.trends || []}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="date" 

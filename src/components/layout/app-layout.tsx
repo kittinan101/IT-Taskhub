@@ -1,32 +1,40 @@
 "use client"
 
 import { useSession, signOut } from "next-auth/react"
-import { useRouter, usePathname } from "next/navigation"
-import { ReactNode, useEffect } from "react"
+import { useRouter, usePathname, useParams } from "next/navigation"
+import { ReactNode, useEffect, useMemo } from "react"
 import Link from "next/link"
 
 interface AppLayoutProps {
   children: ReactNode
 }
 
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", current: false },
-  { name: "Tasks", href: "/tasks", current: false },
-  { name: "System Log", href: "/incidents", current: false },
-  { name: "Team", href: "/team", current: false },
-  { name: "Settings", href: "/settings", current: false },
+const baseNavigation = [
+  { name: "Dashboard", path: "/dashboard" },
+  { name: "Tasks", path: "/tasks" },
+  { name: "System Log", path: "/incidents" },
+  { name: "Team", path: "/team" },
+  { name: "Settings", path: "/settings" },
 ]
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const pathname = usePathname()
+  const params = useParams()
+  const locale = (params.locale as string) || "en"
+
+  const navigation = useMemo(() => 
+    baseNavigation.map(item => ({
+      ...item,
+      href: `/${locale}${item.path}`,
+    })), [locale])
 
   useEffect(() => {
     if (status === "loading") return // Still loading
 
     if (!session) {
-      router.push("/login")
+      router.push(`/${locale}/login`)
       return
     }
   }, [session, status, router])
@@ -45,11 +53,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const currentNavigation = navigation.map((item) => ({
     ...item,
-    current: pathname.startsWith(item.href),
+    current: pathname === item.href || pathname.startsWith(item.href + "/"),
   }))
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: "/login" })
+    signOut({ callbackUrl: `/${locale}/login` })
   }
 
   return (
