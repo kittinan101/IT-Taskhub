@@ -2,7 +2,7 @@
 set -e
 
 echo "=== Database Migration ==="
-prisma migrate deploy --schema=./prisma/schema.prisma
+npx prisma migrate deploy
 
 echo "=== Starting Application ==="
 exec node server.js
