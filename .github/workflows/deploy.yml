@@ -15,27 +15,15 @@ jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma Client
-        run: npx prisma generate
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -44,92 +32,77 @@ jobs:
     needs: build
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set image tag based on branch
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Set image tag
         id: set-tag
         run: |
           if [ "${{ github.ref_name }}" == "main" ]; then
             echo "TAG=latest" >> $GITHUB_OUTPUT
-            echo "EXTRA_TAG=prod" >> $GITHUB_OUTPUT
           else
             echo "TAG=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-            echo "EXTRA_TAG=" >> $GITHUB_OUTPUT
           fi
-
-      - name: Build and push Docker image
+      - name: Build and push
         run: |
-          docker build -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.set-tag.outputs.TAG }} .
-          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.set-tag.outputs.TAG }}
-          
-          # Push extra tag for main branch
-          if [ -n "${{ steps.set-tag.outputs.EXTRA_TAG }}" ]; then
-            docker tag ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.set-tag.outputs.TAG }} ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.set-tag.outputs.EXTRA_TAG }}
-            docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.set-tag.outputs.EXTRA_TAG }}
-          fi
-
-      - name: Output image URI
-        run: |
-          echo "Image pushed: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.set-tag.outputs.TAG }}"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.set-tag.outputs.TAG }} .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ steps.set-tag.outputs.TAG }}
 
   deploy-dev:
     name: Deploy to Dev
     needs: push-image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via Portainer Webhook (Dev)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Run database migrations
+        run: npx prisma migrate deploy
         env:
-          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL_DEV }}
-        run: |
-          if [ -n "$WEBHOOK_URL" ]; then
-            curl -X POST "$WEBHOOK_URL" -H "Content-Type: application/json" --fail --silent --show-error
-          else
-            echo "Dev Webhook not configured, skipping deploy"
-          fi
+          DATABASE_URL: ${{ secrets.DATABASE_URL_DEV }}
+      - name: Deploy via Portainer
+        run: curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL_DEV }}" --fail --silent
 
   deploy-uat:
     name: Deploy to UAT
     needs: push-image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/uat'
+    if: github.ref == 'refs/heads/uat'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via Portainer Webhook (UAT)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Run database migrations
+        run: npx prisma migrate deploy
         env:
-          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL_UAT }}
-        run: |
-          if [ -n "$WEBHOOK_URL" ]; then
-            curl -X POST "$WEBHOOK_URL" -H "Content-Type: application/json" --fail --silent --show-error
-          else
-            echo "UAT Webhook not configured, skipping deploy"
-          fi
+          DATABASE_URL: ${{ secrets.DATABASE_URL_UAT }}
+      - name: Deploy via Portainer
+        run: curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL_UAT }}" --fail --silent
 
   deploy-prod:
     name: Deploy to Production
     needs: push-image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via Portainer Webhook (Production)
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: Run database migrations
+        run: npx prisma migrate deploy
         env:
-          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
-        run: |
-          if [ -n "$WEBHOOK_URL" ]; then
-            curl -X POST "$WEBHOOK_URL" -H "Content-Type: application/json" --fail --silent --show-error
-          else
-            echo "Production Webhook not configured, skipping deploy"
-          fi
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Deploy via Portainer
+        run: curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}" --fail --silent
