@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-echo "Running database migrations..."
-npx --yes prisma migrate deploy
+echo "=== Database Migration ==="
+prisma migrate deploy --schema=./prisma/schema.prisma
 
-echo "Starting application..."
+echo "=== Starting Application ==="
 exec node server.js
