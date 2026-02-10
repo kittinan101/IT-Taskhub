@@ -88,11 +88,11 @@ API_KEYS="key1,key2,key3"
 
 ### Branch → Tag Mapping
 
-| Branch | ECR Tag | Deploy |
-|--------|---------|--------|
-| `develop` | `:develop` | - |
-| `uat` | `:uat` | UAT environment |
-| `main` | `:latest`, `:prod` | Production |
+| Branch | ECR Tag | Deploy | Database |
+|--------|---------|--------|----------|
+| `develop` | `:develop` | Dev environment | `it_taskhub_dev` |
+| `uat` | `:uat` | UAT environment | `it_taskhub_uat` |
+| `main` | `:latest`, `:prod` | Production | `it_taskhub` |
 
 ### Required GitHub Secrets
 
@@ -103,11 +103,25 @@ API_KEYS="key1,key2,key3"
 | `DATABASE_URL` | PostgreSQL connection string (for build) |
 | `PORTAINER_WEBHOOK_URL` | Production deploy webhook |
 | `PORTAINER_WEBHOOK_URL_UAT` | UAT deploy webhook |
+| `PORTAINER_WEBHOOK_URL_DEV` | Dev deploy webhook |
 
 ### ECR Repository
 
 ```
 899522950715.dkr.ecr.ap-southeast-1.amazonaws.com/it-taskhub
+```
+
+### Environment Database URLs
+
+```bash
+# Dev
+DATABASE_URL=postgresql://admin1234:***@postgres.holmcloud.net:5433/it_taskhub_dev
+
+# UAT
+DATABASE_URL=postgresql://admin1234:***@postgres.holmcloud.net:5433/it_taskhub_uat
+
+# Production
+DATABASE_URL=postgresql://admin1234:***@postgres.holmcloud.net:5433/it_taskhub
 ```
 
 ## Docker
