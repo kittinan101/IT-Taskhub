@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { signIn, getSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 
 export default function LoginPage() {
   const [username, setUsername] = useState("")
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const params = useParams()
+  const locale = params.locale || "en"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,7 +30,7 @@ export default function LoginPage() {
       } else {
         const session = await getSession()
         if (session) {
-          router.push("/dashboard")
+          router.push(`/${locale}/dashboard`)
         }
       }
     } catch {

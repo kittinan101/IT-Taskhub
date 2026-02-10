@@ -2,22 +2,24 @@
 
 import { useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { Providers } from "@/components/providers"
 
 function HomePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const params = useParams()
+  const locale = params.locale || "en"
 
   useEffect(() => {
     if (status === "loading") return
 
     if (session) {
-      router.push("/dashboard")
+      router.push(`/${locale}/dashboard`)
     } else {
-      router.push("/login")
+      router.push(`/${locale}/login`)
     }
-  }, [session, status, router])
+  }, [session, status, router, locale])
 
   return (
     <div className="min-h-screen flex items-center justify-center">
