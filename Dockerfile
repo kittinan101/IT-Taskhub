@@ -33,10 +33,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Copy prisma files and install CLI
 COPY --from=builder /app/prisma ./prisma
-COPY --from=deps /app/node_modules/prisma ./node_modules/prisma
 COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=deps /app/node_modules/@prisma/client ./node_modules/@prisma/client
-RUN npm install -g prisma@latest tsx
+RUN npm install -g prisma@5.22.0
 
 # Entrypoint
 COPY --chmod=755 docker-entrypoint.sh ./docker-entrypoint.sh
