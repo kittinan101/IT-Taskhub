@@ -86,6 +86,22 @@ jobs:
         run: |
           echo "Image pushed: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.set-tag.outputs.TAG }}"
 
+  deploy-dev:
+    name: Deploy to Dev
+    needs: push-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via Portainer Webhook (Dev)
+        env:
+          WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL_DEV }}
+        run: |
+          if [ -n "$WEBHOOK_URL" ]; then
+            curl -X POST "$WEBHOOK_URL" -H "Content-Type: application/json" --fail --silent --show-error
+          else
+            echo "Dev Webhook not configured, skipping deploy"
+          fi
+
   deploy-uat:
     name: Deploy to UAT
     needs: push-image
