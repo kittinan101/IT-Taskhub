@@ -1,0 +1,2880 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "IT-Taskhub API",
+    "description": "Task tracker and Incident management system for IT teams.\n\n## Authentication Setup (Apidog)\n\n### Step 1: Get CSRF Token\n- Call `GET /api/auth/csrf`\n- Post-script saves `csrf_token` and `csrf_cookies` to environment\n\n### Step 2: Login\n- Call `POST /api/auth/callback/credentials` with username, password, csrfToken\n- Set Cookie header: `{{csrf_cookies}}`\n- Disable \"Follow Redirects\"\n- Post-script saves `session_token` to environment\n\n### Step 3: Use API\n- All other endpoints: set Cookie header to:\n  `__Secure-next-auth.session-token={{session_token}}`\n\n### Default Credentials\n| Username | Password | Role |\n|----------|----------|------|\n| admin | admin123 | ADMIN |\n| john.pm | admin123 | PM |\n| alice.dev | admin123 | DEVELOPER |",
+    "version": "1.0.0",
+    "contact": {
+      "name": "IT-Taskhub"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://dev-preview.holmcloud.net",
+      "description": "Development"
+    },
+    {
+      "url": "https://it-taskhub.vercel.app",
+      "description": "Production (Vercel)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Authentication (NextAuth)"
+    },
+    {
+      "name": "Dashboard",
+      "description": "Dashboard overview data"
+    },
+    {
+      "name": "Tasks",
+      "description": "Task management"
+    },
+    {
+      "name": "Task Comments",
+      "description": "Comments on tasks"
+    },
+    {
+      "name": "Incidents",
+      "description": "Incident management"
+    },
+    {
+      "name": "Incident Comments",
+      "description": "Comments on incidents"
+    },
+    {
+      "name": "Incident Summary",
+      "description": "Incident analytics & summary"
+    },
+    {
+      "name": "Teams",
+      "description": "Team management"
+    },
+    {
+      "name": "Users",
+      "description": "User management"
+    },
+    {
+      "name": "Upload",
+      "description": "File upload & attachments"
+    },
+    {
+      "name": "V1 API",
+      "description": "External API (API key auth)"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "next-auth.session-token",
+        "description": "NextAuth session cookie"
+      },
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "description": "API key for external integrations (example: taskhub-ext-key-001)"
+      }
+    },
+    "schemas": {
+      "UserSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        }
+      },
+      "UserDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "firstName": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastName": {
+            "type": "string",
+            "nullable": true
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TeamSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "Team": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "color": {
+            "type": "string",
+            "nullable": true
+          },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "members": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "ADMIN",
+          "PM",
+          "BA",
+          "DEVELOPER",
+          "QA"
+        ]
+      },
+      "TaskStatus": {
+        "type": "string",
+        "enum": [
+          "TODO",
+          "IN_PROGRESS",
+          "DONE"
+        ]
+      },
+      "TaskPriority": {
+        "type": "string",
+        "enum": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "URGENT"
+        ]
+      },
+      "IncidentEnvironment": {
+        "type": "string",
+        "enum": [
+          "PRODUCTION",
+          "STAGING",
+          "DEV"
+        ]
+      },
+      "IncidentTier": {
+        "type": "string",
+        "enum": [
+          "CRITICAL",
+          "MAJOR",
+          "MINOR"
+        ]
+      },
+      "IncidentStatus": {
+        "type": "string",
+        "enum": [
+          "OPEN",
+          "INVESTIGATING",
+          "RESOLVED",
+          "CLOSED"
+        ]
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "priority": {
+            "$ref": "#/components/schemas/TaskPriority"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "creatorId": {
+            "type": "string"
+          },
+          "assigneeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "creator": {
+            "$ref": "#/components/schemas/UserSummary"
+          },
+          "assignee": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserSummary"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "team": {
+                    "$ref": "#/components/schemas/TeamSummary"
+                  }
+                }
+              }
+            ]
+          },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "comments": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "TaskDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Task"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "comments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TaskComment"
+                }
+              },
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "TaskComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserSummary"
+          }
+        }
+      },
+      "Incident": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "system": {
+            "type": "string"
+          },
+          "environment": {
+            "$ref": "#/components/schemas/IncidentEnvironment"
+          },
+          "tier": {
+            "$ref": "#/components/schemas/IncidentTier"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IncidentStatus"
+          },
+          "metadata": {
+            "type": "object",
+            "nullable": true
+          },
+          "assigneeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "resolvedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "closedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "assignee": {
+            "nullable": true,
+            "$ref": "#/components/schemas/UserSummary"
+          },
+          "_count": {
+            "type": "object",
+            "properties": {
+              "comments": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "IncidentDetail": {
+        "type": "object",
+        "properties": {
+          "incident": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Incident"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "comments": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/IncidentComment"
+                    }
+                  },
+                  "attachments": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Attachment"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "IncidentComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "incidentId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserSummary"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "nullable": true
+          },
+          "mimeType": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "uploader": {
+            "$ref": "#/components/schemas/UserSummary"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "totalCount": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          }
+        }
+      },
+      "PaginationV2": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "totalPages": {
+            "type": "integer"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "x-auth-note": "For session-authenticated endpoints, first login via /api/auth/signin to obtain session cookie",
+  "paths": {
+    "/api/auth/csrf": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Get CSRF token",
+        "description": "Step 1: Get CSRF token and session cookies. Required before login.\n\n**Apidog Post-script:**\n```js\nvar cookies = pm.response.headers.filter(h => h.key === 'set-cookie');\npm.environment.set('csrf_cookies', cookies.map(c => c.value.split(';')[0]).join('; '));\nvar body = pm.response.json();\npm.environment.set('csrf_token', body.csrfToken);\n```",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "CSRF token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "csrfToken": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "csrfToken": "906777e48a6b5fab3a3d02f783b00f567ef19ab897a8c6be7a1d92489bccd935"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/callback/credentials": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Login with credentials",
+        "description": "Step 2: Login with username/password. Returns 302 redirect with session cookie.\n\n**Pre-requisite:** Call GET /api/auth/csrf first.\n\n**Apidog Setup:**\n- Set Cookie header: `{{csrf_cookies}}`\n- Follow redirects: OFF\n\n**Apidog Post-script:**\n```js\nvar cookies = pm.response.headers.filter(h => h.key === 'set-cookie');\nvar sessionCookie = cookies.find(c => c.value.includes('session-token'));\nif (sessionCookie) {\n    var token = sessionCookie.value.split(';')[0].split('=').slice(1).join('=');\n    pm.environment.set('session_token', token);\n}\n```\n\nThen for all other endpoints, set Cookie header:\n`__Secure-next-auth.session-token={{session_token}}`",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password",
+                  "csrfToken"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "admin"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "admin123"
+                  },
+                  "csrfToken": {
+                    "type": "string",
+                    "example": "{{csrf_token}}"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Login successful \u2014 session cookie set via Set-Cookie header"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get dashboard overview",
+        "description": "Returns overview stats, recent tasks/incidents, assigned tasks, and status/tier distributions",
+        "responses": {
+          "200": {
+            "description": "Dashboard data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "overview": {
+                      "type": "object",
+                      "properties": {
+                        "totalTasks": {
+                          "type": "integer"
+                        },
+                        "overdueTasks": {
+                          "type": "integer"
+                        },
+                        "openIncidents": {
+                          "type": "integer"
+                        },
+                        "teamMembers": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "recentTasks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    },
+                    "recentIncidents": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Incident"
+                      }
+                    },
+                    "myAssignedTasks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    },
+                    "stats": {
+                      "type": "object",
+                      "properties": {
+                        "tasksByStatus": {
+                          "type": "object",
+                          "properties": {
+                            "TODO": {
+                              "type": "integer"
+                            },
+                            "IN_PROGRESS": {
+                              "type": "integer"
+                            },
+                            "DONE": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "incidentsByTier": {
+                          "type": "object",
+                          "properties": {
+                            "CRITICAL": {
+                              "type": "integer"
+                            },
+                            "MAJOR": {
+                              "type": "integer"
+                            },
+                            "MINOR": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "overview": {
+                    "totalTasks": 42,
+                    "overdueTasks": 3,
+                    "openIncidents": 7,
+                    "teamMembers": 8
+                  },
+                  "recentTasks": [
+                    {
+                      "id": "cm6qz1task01",
+                      "title": "Implement user authentication",
+                      "description": "Add OAuth2 integration and JWT token handling",
+                      "status": "IN_PROGRESS",
+                      "priority": "HIGH",
+                      "dueDate": "2026-03-01T00:00:00Z",
+                      "startDate": "2026-02-10T09:00:00Z",
+                      "completedAt": null,
+                      "creatorId": "cm6qz1abc0002",
+                      "assigneeId": "cm6qz1abc0003",
+                      "createdAt": "2026-02-10T08:30:00Z",
+                      "updatedAt": "2026-02-15T14:20:00Z",
+                      "creator": {
+                        "id": "cm6qz1abc0002",
+                        "username": "john.pm",
+                        "firstName": "John",
+                        "lastName": "Smith",
+                        "role": "PM"
+                      },
+                      "assignee": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER",
+                        "team": {
+                          "id": "cm6qz1team01",
+                          "name": "Backend",
+                          "color": "#3B82F6"
+                        }
+                      },
+                      "_count": {
+                        "comments": 5
+                      }
+                    }
+                  ],
+                  "recentIncidents": [
+                    {
+                      "id": "cm6qz1inc01",
+                      "title": "Payment gateway timeout",
+                      "description": "Users experiencing 504 errors when processing payments",
+                      "system": "Payment Service",
+                      "environment": "PRODUCTION",
+                      "tier": "CRITICAL",
+                      "status": "INVESTIGATING",
+                      "metadata": {
+                        "error_rate": "15%",
+                        "affected_users": 127
+                      },
+                      "assigneeId": "cm6qz1abc0003",
+                      "resolvedAt": null,
+                      "closedAt": null,
+                      "createdAt": "2026-02-15T13:45:00Z",
+                      "updatedAt": "2026-02-15T14:20:00Z",
+                      "assignee": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER"
+                      },
+                      "_count": {
+                        "comments": 3
+                      }
+                    }
+                  ],
+                  "myAssignedTasks": [
+                    {
+                      "id": "cm6qz1task01",
+                      "title": "Implement user authentication",
+                      "status": "IN_PROGRESS",
+                      "priority": "HIGH",
+                      "dueDate": "2026-03-01T00:00:00Z"
+                    }
+                  ],
+                  "stats": {
+                    "tasksByStatus": {
+                      "TODO": 15,
+                      "IN_PROGRESS": 18,
+                      "DONE": 9
+                    },
+                    "incidentsByTier": {
+                      "CRITICAL": 2,
+                      "MAJOR": 3,
+                      "MINOR": 2
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tasks": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "List tasks",
+        "description": "Get paginated list of tasks with optional filters",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TaskStatus"
+            },
+            "example": "IN_PROGRESS"
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TaskPriority"
+            },
+            "example": "HIGH"
+          },
+          {
+            "name": "assigneeId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "cm6qz1abc0003"
+          },
+          {
+            "name": "teamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "cm6qz1team01"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search in title and description",
+            "example": "authentication"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task list with pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Task"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    }
+                  }
+                },
+                "example": {
+                  "tasks": [
+                    {
+                      "id": "cm6qz1task01",
+                      "title": "Implement user authentication",
+                      "description": "Add OAuth2 integration and JWT token handling",
+                      "status": "IN_PROGRESS",
+                      "priority": "HIGH",
+                      "dueDate": "2026-03-01T00:00:00Z",
+                      "startDate": "2026-02-10T09:00:00Z",
+                      "completedAt": null,
+                      "creatorId": "cm6qz1abc0002",
+                      "assigneeId": "cm6qz1abc0003",
+                      "createdAt": "2026-02-10T08:30:00Z",
+                      "updatedAt": "2026-02-15T14:20:00Z",
+                      "creator": {
+                        "id": "cm6qz1abc0002",
+                        "username": "john.pm",
+                        "firstName": "John",
+                        "lastName": "Smith",
+                        "role": "PM"
+                      },
+                      "assignee": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER",
+                        "team": {
+                          "id": "cm6qz1team01",
+                          "name": "Backend",
+                          "color": "#3B82F6"
+                        }
+                      },
+                      "_count": {
+                        "comments": 5
+                      }
+                    },
+                    {
+                      "id": "cm6qz1task02",
+                      "title": "Update payment UI",
+                      "description": "Improve checkout flow user experience",
+                      "status": "TODO",
+                      "priority": "MEDIUM",
+                      "dueDate": "2026-03-15T00:00:00Z",
+                      "startDate": null,
+                      "completedAt": null,
+                      "creatorId": "cm6qz1abc0002",
+                      "assigneeId": null,
+                      "createdAt": "2026-02-14T10:15:00Z",
+                      "updatedAt": "2026-02-14T10:15:00Z",
+                      "creator": {
+                        "id": "cm6qz1abc0002",
+                        "username": "john.pm",
+                        "firstName": "John",
+                        "lastName": "Smith",
+                        "role": "PM"
+                      },
+                      "assignee": null,
+                      "_count": {
+                        "comments": 0
+                      }
+                    }
+                  ],
+                  "pagination": {
+                    "page": 1,
+                    "limit": 10,
+                    "totalCount": 42,
+                    "totalPages": 5
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Create task",
+        "description": "Create a new task. All authenticated roles can create tasks.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "priority": {
+                    "$ref": "#/components/schemas/TaskPriority",
+                    "default": "MEDIUM"
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "assigneeId": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "title": "Implement user authentication",
+                "description": "Add OAuth2 integration and JWT token handling for secure user login",
+                "priority": "HIGH",
+                "dueDate": "2026-03-01T00:00:00Z",
+                "startDate": "2026-02-10T09:00:00Z",
+                "assigneeId": "cm6qz1abc0003"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Task created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                },
+                "example": {
+                  "id": "cm6qz1task01",
+                  "title": "Implement user authentication",
+                  "description": "Add OAuth2 integration and JWT token handling for secure user login",
+                  "status": "TODO",
+                  "priority": "HIGH",
+                  "dueDate": "2026-03-01T00:00:00Z",
+                  "startDate": "2026-02-10T09:00:00Z",
+                  "completedAt": null,
+                  "creatorId": "cm6qz1abc0002",
+                  "assigneeId": "cm6qz1abc0003",
+                  "createdAt": "2026-02-15T15:20:00Z",
+                  "updatedAt": "2026-02-15T15:20:00Z",
+                  "creator": {
+                    "id": "cm6qz1abc0002",
+                    "username": "john.pm",
+                    "firstName": "John",
+                    "lastName": "Smith",
+                    "role": "PM"
+                  },
+                  "assignee": {
+                    "id": "cm6qz1abc0003",
+                    "username": "alice.dev",
+                    "firstName": "Alice",
+                    "lastName": "Chen",
+                    "role": "DEVELOPER",
+                    "team": {
+                      "id": "cm6qz1team01",
+                      "name": "Backend",
+                      "color": "#3B82F6"
+                    }
+                  },
+                  "_count": {
+                    "comments": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Title is required"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Get task detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "cm6qz1task01"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task detail with comments and attachments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetail"
+                },
+                "example": {
+                  "id": "cm6qz1task01",
+                  "title": "Implement user authentication",
+                  "description": "Add OAuth2 integration and JWT token handling for secure user login",
+                  "status": "IN_PROGRESS",
+                  "priority": "HIGH",
+                  "dueDate": "2026-03-01T00:00:00Z",
+                  "startDate": "2026-02-10T09:00:00Z",
+                  "completedAt": null,
+                  "creatorId": "cm6qz1abc0002",
+                  "assigneeId": "cm6qz1abc0003",
+                  "createdAt": "2026-02-10T08:30:00Z",
+                  "updatedAt": "2026-02-15T14:20:00Z",
+                  "creator": {
+                    "id": "cm6qz1abc0002",
+                    "username": "john.pm",
+                    "firstName": "John",
+                    "lastName": "Smith",
+                    "role": "PM"
+                  },
+                  "assignee": {
+                    "id": "cm6qz1abc0003",
+                    "username": "alice.dev",
+                    "firstName": "Alice",
+                    "lastName": "Chen",
+                    "role": "DEVELOPER",
+                    "team": {
+                      "id": "cm6qz1team01",
+                      "name": "Backend",
+                      "color": "#3B82F6"
+                    }
+                  },
+                  "_count": {
+                    "comments": 5
+                  },
+                  "comments": [
+                    {
+                      "id": "cm6qz1comm01",
+                      "content": "Started working on OAuth integration with Google provider",
+                      "taskId": "cm6qz1task01",
+                      "userId": "cm6qz1abc0003",
+                      "createdAt": "2026-02-10T10:30:00Z",
+                      "updatedAt": "2026-02-10T10:30:00Z",
+                      "user": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER"
+                      }
+                    },
+                    {
+                      "id": "cm6qz1comm02",
+                      "content": "JWT implementation completed, testing in progress",
+                      "taskId": "cm6qz1task01",
+                      "userId": "cm6qz1abc0003",
+                      "createdAt": "2026-02-14T16:45:00Z",
+                      "updatedAt": "2026-02-14T16:45:00Z",
+                      "user": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER"
+                      }
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "id": "cm6qz1att01",
+                      "filename": "auth-flow-diagram.png",
+                      "size": 145302,
+                      "mimeType": "image/png",
+                      "createdAt": "2026-02-11T14:20:00Z",
+                      "uploader": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Update task",
+        "description": "Update task fields. Admin/PM can update everything. Creator/Assignee have limited access. Dev/QA assignees can only update status.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "cm6qz1task01"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/TaskStatus"
+                  },
+                  "priority": {
+                    "$ref": "#/components/schemas/TaskPriority"
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "assigneeId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "teamId": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              },
+              "example": {
+                "status": "IN_PROGRESS",
+                "description": "Add OAuth2 integration and JWT token handling for secure user login. Updated to include 2FA support.",
+                "dueDate": "2026-03-15T00:00:00Z"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                },
+                "example": {
+                  "id": "cm6qz1task01",
+                  "title": "Implement user authentication",
+                  "description": "Add OAuth2 integration and JWT token handling for secure user login. Updated to include 2FA support.",
+                  "status": "IN_PROGRESS",
+                  "priority": "HIGH",
+                  "dueDate": "2026-03-15T00:00:00Z",
+                  "startDate": "2026-02-10T09:00:00Z",
+                  "completedAt": null,
+                  "creatorId": "cm6qz1abc0002",
+                  "assigneeId": "cm6qz1abc0003",
+                  "createdAt": "2026-02-10T08:30:00Z",
+                  "updatedAt": "2026-02-15T15:25:00Z",
+                  "creator": {
+                    "id": "cm6qz1abc0002",
+                    "username": "john.pm",
+                    "firstName": "John",
+                    "lastName": "Smith",
+                    "role": "PM"
+                  },
+                  "assignee": {
+                    "id": "cm6qz1abc0003",
+                    "username": "alice.dev",
+                    "firstName": "Alice",
+                    "lastName": "Chen",
+                    "role": "DEVELOPER",
+                    "team": {
+                      "id": "cm6qz1team01",
+                      "name": "Backend",
+                      "color": "#3B82F6"
+                    }
+                  },
+                  "_count": {
+                    "comments": 5
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Delete task",
+        "description": "Only Admin/PM can delete tasks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "cm6qz1task01"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "Task deleted successfully"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only PM/Admin can delete tasks"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      }
+    },
+    "/api/tasks/{id}/comments": {
+      "get": {
+        "tags": [
+          "Task Comments"
+        ],
+        "summary": "List task comments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Task ID",
+            "example": "cm6qz1task01"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comments list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TaskComment"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "cm6qz1comm01",
+                    "content": "Started working on OAuth integration with Google provider",
+                    "taskId": "cm6qz1task01",
+                    "userId": "cm6qz1abc0003",
+                    "createdAt": "2026-02-10T10:30:00Z",
+                    "updatedAt": "2026-02-10T10:30:00Z",
+                    "user": {
+                      "id": "cm6qz1abc0003",
+                      "username": "alice.dev",
+                      "firstName": "Alice",
+                      "lastName": "Chen",
+                      "role": "DEVELOPER"
+                    }
+                  },
+                  {
+                    "id": "cm6qz1comm02",
+                    "content": "JWT implementation completed, testing in progress",
+                    "taskId": "cm6qz1task01",
+                    "userId": "cm6qz1abc0003",
+                    "createdAt": "2026-02-14T16:45:00Z",
+                    "updatedAt": "2026-02-14T16:45:00Z",
+                    "user": {
+                      "id": "cm6qz1abc0003",
+                      "username": "alice.dev",
+                      "firstName": "Alice",
+                      "lastName": "Chen",
+                      "role": "DEVELOPER"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Task Comments"
+        ],
+        "summary": "Add task comment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Task ID",
+            "example": "cm6qz1task01"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "content": "2FA integration is now complete and tested with Google Authenticator"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskComment"
+                },
+                "example": {
+                  "id": "cm6qz1comm03",
+                  "content": "2FA integration is now complete and tested with Google Authenticator",
+                  "taskId": "cm6qz1task01",
+                  "userId": "cm6qz1abc0003",
+                  "createdAt": "2026-02-15T15:30:00Z",
+                  "updatedAt": "2026-02-15T15:30:00Z",
+                  "user": {
+                    "id": "cm6qz1abc0003",
+                    "username": "alice.dev",
+                    "firstName": "Alice",
+                    "lastName": "Chen",
+                    "role": "DEVELOPER"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Content is required"
+          },
+          "404": {
+            "description": "Task not found"
+          }
+        }
+      }
+    },
+    "/api/incidents": {
+      "get": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "List incidents",
+        "parameters": [
+          {
+            "name": "system",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Payment Service"
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IncidentEnvironment"
+            },
+            "example": "PRODUCTION"
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IncidentTier"
+            },
+            "example": "CRITICAL"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IncidentStatus"
+            },
+            "example": "INVESTIGATING"
+          },
+          {
+            "name": "assignee",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Assignee user ID",
+            "example": "cm6qz1abc0003"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "example": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incident list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "incidents": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Incident"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/PaginationV2"
+                    }
+                  }
+                },
+                "example": {
+                  "incidents": [
+                    {
+                      "id": "cm6qz1inc01",
+                      "title": "Payment gateway timeout",
+                      "description": "Users experiencing 504 errors when processing payments",
+                      "system": "Payment Service",
+                      "environment": "PRODUCTION",
+                      "tier": "CRITICAL",
+                      "status": "INVESTIGATING",
+                      "metadata": {
+                        "error_rate": "15%",
+                        "affected_users": 127,
+                        "first_seen": "2026-02-15T13:30:00Z"
+                      },
+                      "assigneeId": "cm6qz1abc0003",
+                      "resolvedAt": null,
+                      "closedAt": null,
+                      "createdAt": "2026-02-15T13:45:00Z",
+                      "updatedAt": "2026-02-15T15:20:00Z",
+                      "assignee": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER"
+                      },
+                      "_count": {
+                        "comments": 3
+                      }
+                    }
+                  ],
+                  "pagination": {
+                    "page": 1,
+                    "limit": 10,
+                    "total": 23,
+                    "totalPages": 3
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Create incident",
+        "description": "Only Admin/PM can create incidents manually",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "system",
+                  "environment",
+                  "tier"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "system": {
+                    "type": "string"
+                  },
+                  "environment": {
+                    "$ref": "#/components/schemas/IncidentEnvironment"
+                  },
+                  "tier": {
+                    "$ref": "#/components/schemas/IncidentTier"
+                  },
+                  "assigneeId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Incident created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "incident": {
+                      "$ref": "#/components/schemas/Incident"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/api/incidents/{id}": {
+      "get": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Get incident detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incident detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Incident not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Incidents"
+        ],
+        "summary": "Update incident",
+        "description": "Admin/PM can update all fields. Assignee/QA can update status.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "$ref": "#/components/schemas/IncidentStatus"
+                  },
+                  "assigneeId": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Incident updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "incident": {
+                      "$ref": "#/components/schemas/Incident"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Incident not found"
+          }
+        }
+      }
+    },
+    "/api/incidents/{id}/comments": {
+      "get": {
+        "tags": [
+          "Incident Comments"
+        ],
+        "summary": "List incident comments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Incident ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comments list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "comments": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/IncidentComment"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Incident Comments"
+        ],
+        "summary": "Add incident comment",
+        "description": "All authenticated users can comment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Incident ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "content"
+                ],
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comment created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "comment": {
+                      "$ref": "#/components/schemas/IncidentComment"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Content is required"
+          },
+          "404": {
+            "description": "Incident not found"
+          }
+        }
+      }
+    },
+    "/api/incidents/summary": {
+      "get": {
+        "tags": [
+          "Incident Summary"
+        ],
+        "summary": "Get incident analytics summary",
+        "description": "Returns summary stats, distributions (status/tier/environment/system), and daily trends",
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            },
+            "description": "Number of days for trend data"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incident summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer"
+                        },
+                        "resolved": {
+                          "type": "integer"
+                        },
+                        "mttr": {
+                          "type": "number",
+                          "description": "Mean Time To Resolution in hours"
+                        },
+                        "recent24h": {
+                          "type": "integer"
+                        },
+                        "openCritical": {
+                          "type": "integer"
+                        },
+                        "resolutionRate": {
+                          "type": "integer",
+                          "description": "Percentage"
+                        }
+                      }
+                    },
+                    "distributions": {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "tier": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "environment": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        },
+                        "systems": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "value": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "trends": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "date": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "total": {
+                            "type": "integer"
+                          },
+                          "critical": {
+                            "type": "integer"
+                          },
+                          "major": {
+                            "type": "integer"
+                          },
+                          "minor": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/teams": {
+      "get": {
+        "tags": [
+          "Teams"
+        ],
+        "summary": "List active teams",
+        "responses": {
+          "200": {
+            "description": "Teams list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "cm6qz1team01",
+                    "name": "Backend",
+                    "description": "Backend development team focused on API and infrastructure",
+                    "color": "#3B82F6",
+                    "_count": {
+                      "members": 4
+                    }
+                  },
+                  {
+                    "id": "cm6qz1team02",
+                    "name": "Frontend",
+                    "description": "Frontend development team working on UI/UX",
+                    "color": "#10B981",
+                    "_count": {
+                      "members": 3
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "List active users",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by team",
+            "example": "cm6qz1team01"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "firstName": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "role": {
+                        "$ref": "#/components/schemas/Role"
+                      },
+                      "email": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "id": "cm6qz1abc0001",
+                    "username": "admin",
+                    "firstName": "Admin",
+                    "lastName": "User",
+                    "role": "ADMIN",
+                    "email": "admin@taskhub.example.com"
+                  },
+                  {
+                    "id": "cm6qz1abc0002",
+                    "username": "john.pm",
+                    "firstName": "John",
+                    "lastName": "Smith",
+                    "role": "PM",
+                    "email": "john.smith@taskhub.example.com"
+                  },
+                  {
+                    "id": "cm6qz1abc0003",
+                    "username": "alice.dev",
+                    "firstName": "Alice",
+                    "lastName": "Chen",
+                    "role": "DEVELOPER",
+                    "email": "alice.chen@taskhub.example.com"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Create user",
+        "description": "Admin only",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "$ref": "#/components/schemas/Role",
+                    "default": "DEVELOPER"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Username and password required"
+          },
+          "403": {
+            "description": "Admin access required"
+          },
+          "409": {
+            "description": "User already exists"
+          }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get user detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/UserDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update user profile",
+        "description": "Admin can update any user. Users can update their own profile.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "currentPassword": {
+                    "type": "string",
+                    "description": "Required when changing password"
+                  },
+                  "newPassword": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/UserDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/users/{id}/role": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update user role",
+        "description": "Admin only",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "role"
+                ],
+                "properties": {
+                  "role": {
+                    "$ref": "#/components/schemas/Role"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Role updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/UserDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid role"
+          },
+          "401": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/api/users/{id}/toggle-active": {
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Toggle user active status",
+        "description": "Admin only. Cannot deactivate yourself.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status toggled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "$ref": "#/components/schemas/UserDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Cannot deactivate your own account"
+          },
+          "401": {
+            "description": "Admin only"
+          }
+        }
+      }
+    },
+    "/api/upload": {
+      "post": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Upload file attachment",
+        "description": "Upload a file to a task or incident. Max 10MB. Allowed: images, PDF, Word, Excel, text, zip.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "taskId": {
+                    "type": "string"
+                  },
+                  "incidentId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "attachment": {
+                      "$ref": "#/components/schemas/Attachment"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error (no file, missing IDs, size/type)"
+          },
+          "404": {
+            "description": "Task/Incident not found"
+          }
+        }
+      }
+    },
+    "/api/attachments/{id}": {
+      "get": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Download attachment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Delete attachment",
+        "description": "Uploader, admin, or assignee of the related task/incident can delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions"
+          },
+          "404": {
+            "description": "Attachment not found"
+          }
+        }
+      }
+    },
+    "/api/v1/incidents": {
+      "get": {
+        "tags": [
+          "V1 API"
+        ],
+        "summary": "List incidents (external API)",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "system",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "example": "Payment Service"
+          },
+          {
+            "name": "environment",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IncidentEnvironment"
+            },
+            "example": "PRODUCTION"
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IncidentTier"
+            },
+            "example": "CRITICAL"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/IncidentStatus"
+            },
+            "example": "INVESTIGATING"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            },
+            "example": 20
+          },
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "taskhub-ext-key-001",
+            "description": "API key for external integrations"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Incident list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "incidents": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Incident"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/PaginationV2"
+                    }
+                  }
+                },
+                "example": {
+                  "incidents": [
+                    {
+                      "id": "cm6qz1inc01",
+                      "title": "Payment gateway timeout",
+                      "description": "Users experiencing 504 errors when processing payments",
+                      "system": "Payment Service",
+                      "environment": "PRODUCTION",
+                      "tier": "CRITICAL",
+                      "status": "INVESTIGATING",
+                      "metadata": {
+                        "error_rate": "15%",
+                        "affected_users": 127
+                      },
+                      "assigneeId": "cm6qz1abc0003",
+                      "resolvedAt": null,
+                      "closedAt": null,
+                      "createdAt": "2026-02-15T13:45:00Z",
+                      "updatedAt": "2026-02-15T15:20:00Z",
+                      "assignee": {
+                        "id": "cm6qz1abc0003",
+                        "username": "alice.dev",
+                        "firstName": "Alice",
+                        "lastName": "Chen",
+                        "role": "DEVELOPER"
+                      },
+                      "_count": {
+                        "comments": 3
+                      }
+                    }
+                  ],
+                  "pagination": {
+                    "page": 1,
+                    "limit": 10,
+                    "total": 7,
+                    "totalPages": 1
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid API key"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "V1 API"
+        ],
+        "summary": "Create incident (external API)",
+        "description": "Create incident via API key authentication. For external system integrations.",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "system",
+                  "environment",
+                  "tier"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "system": {
+                    "type": "string"
+                  },
+                  "environment": {
+                    "$ref": "#/components/schemas/IncidentEnvironment"
+                  },
+                  "tier": {
+                    "$ref": "#/components/schemas/IncidentTier"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Additional data from external systems"
+                  }
+                }
+              },
+              "example": {
+                "title": "Payment gateway timeout",
+                "description": "Users experiencing 504 errors when processing payments via Stripe integration",
+                "system": "Payment Service",
+                "environment": "PRODUCTION",
+                "tier": "CRITICAL",
+                "metadata": {
+                  "error_rate": "15%",
+                  "affected_users": 127,
+                  "first_seen": "2026-02-15T13:30:00Z",
+                  "error_code": "GATEWAY_TIMEOUT",
+                  "upstream_service": "stripe-api"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Incident created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "incident": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "system": {
+                          "type": "string"
+                        },
+                        "environment": {
+                          "type": "string"
+                        },
+                        "tier": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "incident": {
+                    "id": "cm6qz1inc03",
+                    "title": "Payment gateway timeout",
+                    "system": "Payment Service",
+                    "environment": "PRODUCTION",
+                    "tier": "CRITICAL",
+                    "status": "OPEN",
+                    "createdAt": "2026-02-15T15:45:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing/invalid fields"
+          },
+          "401": {
+            "description": "Invalid API key"
+          }
+        }
+      }
+    }
+  }
+}

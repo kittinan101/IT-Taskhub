@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
+import { ArrowLeft, AlertTriangle, Clock, CheckCircle, Activity, TrendingUp, BarChart3 } from "lucide-react"
 import { useLocalePath } from "@/lib/navigation"
 import {
   BarChart,
@@ -11,33 +12,34 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   PieChart,
   Pie,
   Cell,
   LineChart,
   Line,
+  Legend,
   ResponsiveContainer,
 } from "recharts"
 import { IncidentSummary } from "@/lib/incidents"
+import CustomSelect from "@/components/ui/CustomSelect"
 
 const STATUS_COLORS = {
-  OPEN: "#3B82F6",      // Blue
-  INVESTIGATING: "#F59E0B", // Amber
-  RESOLVED: "#10B981",   // Emerald
-  CLOSED: "#6B7280",     // Gray
+  OPEN: "#EF4444",
+  INVESTIGATING: "#F59E0B",
+  RESOLVED: "#10B981",
+  CLOSED: "#6B7280",
 }
 
 const TIER_COLORS = {
-  CRITICAL: "#EF4444",   // Red
-  MAJOR: "#F97316",      // Orange
-  MINOR: "#3B82F6",      // Blue
+  CRITICAL: "#EF4444",
+  MAJOR: "#F97316",
+  MINOR: "#EAB308",
 }
 
 const ENV_COLORS = {
-  PRODUCTION: "#EF4444", // Red
-  STAGING: "#F59E0B",    // Amber
-  DEV: "#10B981",        // Emerald
+  PRODUCTION: "#EF4444",
+  STAGING: "#F59E0B",
+  DEV: "#3B82F6",
 }
 
 export default function IncidentDashboardPage() {
@@ -46,15 +48,13 @@ export default function IncidentDashboardPage() {
   const [summary, setSummary] = useState<IncidentSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [timeRange, setTimeRange] = useState(30) // days
+  const [timeRange, setTimeRange] = useState(30)
 
   const fetchSummary = async () => {
     setLoading(true)
     try {
       const response = await fetch(`/api/incidents/summary?days=${timeRange}`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch incident summary")
-      }
+      if (!response.ok) throw new Error("Failed to fetch incident summary")
       const data: IncidentSummary = await response.json()
       setSummary(data)
     } catch (err) {
@@ -79,25 +79,21 @@ export default function IncidentDashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading dashboard...</div>
+        <div className="flex items-center gap-3 text-gray-400">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-indigo-600" />
+          <span className="text-sm">Loading dashboard...</span>
+        </div>
       </div>
     )
   }
 
   if (error || !summary) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-        <div className="text-sm text-red-700">
-          Error: {error || "Failed to load dashboard data"}
-        </div>
-        <div className="mt-2">
-          <Link
-            href={localePath("/incidents")}
-            className="text-sm text-red-600 hover:text-red-900 underline"
-          >
-            ← Back to incidents
-          </Link>
-        </div>
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+        <div className="text-sm text-red-700">Error: {error || "Failed to load dashboard data"}</div>
+        <Link href={localePath("/incidents")} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-800">
+          <ArrowLeft className="h-4 w-4" /> Back to incidents
+        </Link>
       </div>
     )
   }
@@ -122,28 +118,29 @@ export default function IncidentDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-            <Link href={localePath("/incidents")} className="hover:text-gray-700">
+          <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
+            <Link href={localePath("/incidents")} className="inline-flex items-center gap-1.5 hover:text-gray-700 transition-colors">
+              <ArrowLeft className="h-4 w-4" />
               Incidents
             </Link>
-            <span>→</span>
-            <span className="font-medium">Dashboard</span>
+            <span>/</span>
+            <span className="font-medium text-gray-700">Dashboard</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Incident Dashboard</h1>
         </div>
-        <div className="flex items-center space-x-4">
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(Number(e.target.value))}
-            className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm text-gray-900"
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-          </select>
+        <div className="flex items-center gap-3">
+          <CustomSelect
+            value={String(timeRange)}
+            onChange={(val) => setTimeRange(Number(val))}
+            options={[
+              { value: '7', label: 'Last 7 days' },
+              { value: '30', label: 'Last 30 days' },
+              { value: '90', label: 'Last 90 days' },
+            ]}
+          />
           <Link
             href={localePath("/incidents")}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-indigo-700"
           >
             View All Incidents
           </Link>
@@ -151,98 +148,77 @@ export default function IncidentDashboardPage() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 110 2h-1v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6H3a1 1 0 110-2h4z" />
-                </svg>
-              </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50">
+              <BarChart3 className="h-6 w-6 text-indigo-600" />
             </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Total Incidents</dt>
-                <dd className="text-lg font-medium text-gray-900">{summary.summary.total}</dd>
-              </dl>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Total Incidents</p>
+              <p className="text-2xl font-bold text-gray-900">{summary.summary.total}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+        <div className="rounded-xl bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-50">
+              <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Resolution Rate</dt>
-                <dd className="text-lg font-medium text-gray-900">{summary.summary.resolutionRate}%</dd>
-              </dl>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Resolution Rate</p>
+              <p className="text-2xl font-bold text-gray-900">{summary.summary.resolutionRate}%</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+        <div className="rounded-xl bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50">
+              <Clock className="h-6 w-6 text-amber-600" />
             </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">MTTR</dt>
-                <dd className="text-lg font-medium text-gray-900">{summary.summary.mttr}h</dd>
-              </dl>
+            <div>
+              <p className="text-sm font-medium text-gray-500">MTTR</p>
+              <p className="text-2xl font-bold text-gray-900">{summary.summary.mttr}h</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className={`w-8 h-8 ${summary.summary.openCritical > 0 ? 'bg-red-500' : 'bg-gray-400'} rounded-md flex items-center justify-center`}>
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.098 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
+        <div className="rounded-xl bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center gap-4">
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${summary.summary.openCritical > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+              <AlertTriangle className={`h-6 w-6 ${summary.summary.openCritical > 0 ? 'text-red-600' : 'text-gray-400'}`} />
             </div>
-            <div className="ml-5 w-0 flex-1">
-              <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Open Critical</dt>
-                <dd className="text-lg font-medium text-gray-900">{summary.summary.openCritical}</dd>
-              </dl>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Open Critical</p>
+              <p className={`text-2xl font-bold ${summary.summary.openCritical > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                {summary.summary.openCritical}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Incidents by Status</h3>
-          <ResponsiveContainer width="100%" height={300}>
+      {/* Charts Row 1 */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Status Distribution - Donut */}
+        <div className="rounded-xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
+            <Activity className="h-5 w-5 text-gray-400" />
+            Incidents by Status
+          </h3>
+          <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
                 data={pieDataForStatus}
                 cx="50%"
                 cy="50%"
+                innerRadius={55}
+                outerRadius={90}
                 labelLine={false}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                label={(props: any) => 
-                  `${props.name}: ${props.value} (${((props.percent ?? 0) * 100).toFixed(0)}%)`
-                }
-                outerRadius={80}
-                fill="#8884d8"
+                label={(props: any) => `${props.name}: ${props.value}`}
                 dataKey="value"
               >
                 {pieDataForStatus.map((entry, index) => (
@@ -254,16 +230,19 @@ export default function IncidentDashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Tier Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Incidents by Tier</h3>
-          <ResponsiveContainer width="100%" height={300}>
+        {/* Tier Distribution - Bar */}
+        <div className="rounded-xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
+            <AlertTriangle className="h-5 w-5 text-gray-400" />
+            Incidents by Tier
+          </h3>
+          <ResponsiveContainer width="100%" height={280}>
             <BarChart data={pieDataForTier}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="value" fill="#8884d8">
+              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {pieDataForTier.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
@@ -273,15 +252,15 @@ export default function IncidentDashboardPage() {
         </div>
 
         {/* Environment Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Incidents by Environment</h3>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="rounded-xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-gray-900">Incidents by Environment</h3>
+          <ResponsiveContainer width="100%" height={280}>
             <BarChart data={pieDataForEnv}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="value" fill="#8884d8">
+              <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {pieDataForEnv.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
@@ -290,84 +269,65 @@ export default function IncidentDashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* System Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Top Problematic Systems</h3>
-          <ResponsiveContainer width="100%" height={300}>
+        {/* Top Systems */}
+        <div className="rounded-xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-gray-900">Top Problematic Systems</h3>
+          <ResponsiveContainer width="100%" height={280}>
             <BarChart data={summary.distributions?.systems || []} layout="horizontal">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={80} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis type="number" tick={{ fontSize: 12 }} />
+              <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="value" fill="#3B82F6" />
+              <Bar dataKey="value" fill="#6366F1" radius={[0, 6, 6, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Trend Chart */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Incident Trends (Last {timeRange} days)</h3>
-        <ResponsiveContainer width="100%" height={400}>
+      <div className="rounded-xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-gray-900">
+          <TrendingUp className="h-5 w-5 text-gray-400" />
+          Incident Trends (Last {timeRange} days)
+        </h3>
+        <ResponsiveContainer width="100%" height={350}>
           <LineChart data={summary.trends || []}>
-            <CartesianGrid strokeDasharray="3 3" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis 
               dataKey="date" 
               tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              tick={{ fontSize: 12 }}
             />
-            <YAxis />
+            <YAxis tick={{ fontSize: 12 }} />
             <Tooltip 
               labelFormatter={(value) => new Date(value).toLocaleDateString()}
               formatter={(value, name) => [value, name === 'total' ? 'Total' : (name ?? '').toString().charAt(0).toUpperCase() + (name ?? '').toString().slice(1)]}
+              contentStyle={{ borderRadius: '0.75rem', border: '1px solid #e5e7eb' }}
             />
             <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="total" 
-              stroke="#6B7280" 
-              strokeWidth={2}
-              name="Total"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="critical" 
-              stroke="#EF4444" 
-              strokeWidth={2}
-              name="Critical"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="major" 
-              stroke="#F97316" 
-              strokeWidth={2}
-              name="Major"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="minor" 
-              stroke="#3B82F6" 
-              strokeWidth={2}
-              name="Minor"
-            />
+            <Line type="monotone" dataKey="total" stroke="#6B7280" strokeWidth={2} name="Total" dot={false} />
+            <Line type="monotone" dataKey="critical" stroke="#EF4444" strokeWidth={2} name="Critical" dot={false} />
+            <Line type="monotone" dataKey="major" stroke="#F97316" strokeWidth={2} name="Major" dot={false} />
+            <Line type="monotone" dataKey="minor" stroke="#EAB308" strokeWidth={2} name="Minor" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Stats</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{summary.summary.recent24h}</div>
-            <div className="text-sm text-blue-600">Incidents in last 24h</div>
+      {/* Quick Stats */}
+      <div className="rounded-xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-base font-semibold text-gray-900">Quick Stats</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-xl bg-indigo-50 p-5 text-center">
+            <div className="text-3xl font-bold text-indigo-600">{summary.summary.recent24h}</div>
+            <div className="mt-1 text-sm font-medium text-indigo-600/80">Incidents in last 24h</div>
           </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{summary.summary.resolved}</div>
-            <div className="text-sm text-green-600">Total resolved</div>
+          <div className="rounded-xl bg-green-50 p-5 text-center">
+            <div className="text-3xl font-bold text-green-600">{summary.summary.resolved}</div>
+            <div className="mt-1 text-sm font-medium text-green-600/80">Total resolved</div>
           </div>
-          <div className="text-center p-4 bg-yellow-50 rounded-lg">
-            <div className="text-2xl font-bold text-yellow-600">{summary.summary.mttr}</div>
-            <div className="text-sm text-yellow-600">Average resolution time (hours)</div>
+          <div className="rounded-xl bg-amber-50 p-5 text-center">
+            <div className="text-3xl font-bold text-amber-600">{summary.summary.mttr}</div>
+            <div className="mt-1 text-sm font-medium text-amber-600/80">Avg resolution time (hours)</div>
           </div>
         </div>
       </div>

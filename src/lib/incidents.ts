@@ -80,8 +80,8 @@ export interface IncidentSummary {
 }
 
 export const statusColors = {
-  OPEN: "bg-blue-100 text-blue-800 border-blue-200",
-  INVESTIGATING: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  OPEN: "bg-red-100 text-red-800 border-red-200",
+  INVESTIGATING: "bg-amber-100 text-amber-800 border-amber-200",
   RESOLVED: "bg-green-100 text-green-800 border-green-200",
   CLOSED: "bg-gray-100 text-gray-800 border-gray-200",
 }
@@ -89,13 +89,13 @@ export const statusColors = {
 export const tierColors = {
   CRITICAL: "bg-red-100 text-red-800 border-red-200",
   MAJOR: "bg-orange-100 text-orange-800 border-orange-200",
-  MINOR: "bg-blue-100 text-blue-800 border-blue-200",
+  MINOR: "bg-yellow-100 text-yellow-800 border-yellow-200",
 }
 
 export const environmentColors = {
   PRODUCTION: "bg-red-100 text-red-800 border-red-200",
   STAGING: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  DEV: "bg-green-100 text-green-800 border-green-200",
+  DEV: "bg-blue-100 text-blue-800 border-blue-200",
 }
 
 export function canUpdateIncident(userRole: Role, userId: string, incident: IncidentWithDetails): boolean {

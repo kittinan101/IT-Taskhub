@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { locales } from '@/i18n';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 export default function LocaleSwitcher() {
   const t = useTranslations('settings');
@@ -24,19 +25,14 @@ export default function LocaleSwitcher() {
       <label htmlFor="locale-select" className="text-sm font-medium text-gray-700 dark:text-gray-300">
         {t('language')}
       </label>
-      <select
-        id="locale-select"
-        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+      <CustomSelect
         value={locale}
-        onChange={(e) => onSelectChange(e.target.value)}
-        disabled={isPending}
-      >
-        {locales.map((cur) => (
-          <option key={cur} value={cur}>
-            {t(`languageOptions.${cur}`)}
-          </option>
-        ))}
-      </select>
+        onChange={(val) => onSelectChange(val)}
+        options={locales.map((cur) => ({
+          value: cur,
+          label: t(`languageOptions.${cur}`),
+        }))}
+      />
       {isPending && (
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Changing language...

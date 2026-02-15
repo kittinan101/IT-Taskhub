@@ -10,6 +10,8 @@ import {
   PhotoIcon
 } from '@heroicons/react/24/outline'
 import { format } from 'date-fns'
+import ConfirmDialog from '@/components/ui/ConfirmDialog'
+import AlertDialog from '@/components/ui/AlertDialog'
 
 interface Attachment {
   id: string
@@ -33,6 +35,8 @@ interface AttachmentListProps {
 
 export default function AttachmentList({ attachments, canDelete = false, className }: AttachmentListProps) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [alertState, setAlertState] = useState<{ open: boolean; title: string; message: string; type: 'success' | 'error' }>({ open: false, title: '', message: '', type: 'error' })
   const router = useRouter()
 
   const formatFileSize = (bytes: number): string => {
@@ -45,19 +49,13 @@ export default function AttachmentList({ attachments, canDelete = false, classNa
 
   const getFileIcon = (mimeType?: string) => {
     if (!mimeType) return DocumentIcon
-    
-    if (mimeType.startsWith('image/')) {
-      return PhotoIcon
-    }
-    
+    if (mimeType.startsWith('image/')) return PhotoIcon
     return DocumentIcon
   }
 
   const getDisplayName = (uploader: Attachment['uploader']): string => {
     const { firstName, lastName, username } = uploader
-    if (firstName && lastName) {
-      return `${firstName} ${lastName}`
-    }
+    if (firstName && lastName) return `${firstName} ${lastName}`
     return username
   }
 
@@ -65,12 +63,7 @@ export default function AttachmentList({ attachments, canDelete = false, classNa
     setLoading(id)
     try {
       const response = await fetch(`/api/attachments/${id}`)
-      
-      if (!response.ok) {
-        throw new Error('Download failed')
-      }
-
-      // Create blob and download
+      if (!response.ok) throw new Error('Download failed')
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -82,33 +75,24 @@ export default function AttachmentList({ attachments, canDelete = false, classNa
       document.body.removeChild(a)
     } catch (error) {
       console.error('Download error:', error)
-      alert('Failed to download file')
+      setAlertState({ open: true, title: 'Download Failed', message: 'Failed to download file', type: 'error' })
     } finally {
       setLoading(null)
     }
   }
 
   const deleteFile = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this file?')) {
-      return
-    }
-
     setLoading(id)
     try {
-      const response = await fetch(`/api/attachments/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        throw new Error('Delete failed')
-      }
-
+      const response = await fetch(`/api/attachments/${id}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Delete failed')
       router.refresh()
     } catch (error) {
       console.error('Delete error:', error)
-      alert('Failed to delete file')
+      setAlertState({ open: true, title: 'Delete Failed', message: 'Failed to delete file', type: 'error' })
     } finally {
       setLoading(null)
+      setDeleteTarget(null)
     }
   }
 
@@ -123,6 +107,22 @@ export default function AttachmentList({ attachments, canDelete = false, classNa
 
   return (
     <div className={className}>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onConfirm={() => deleteTarget && deleteFile(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+        title="Delete File"
+        message="Are you sure you want to delete this file?"
+        type="danger"
+        confirmText="Delete"
+      />
+      <AlertDialog
+        open={alertState.open}
+        onClose={() => setAlertState(s => ({ ...s, open: false }))}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+      />
       <div className="space-y-3">
         {attachments.map((attachment) => {
           const Icon = getFileIcon(attachment.mimeType)
@@ -163,7 +163,7 @@ export default function AttachmentList({ attachments, canDelete = false, classNa
 
                 {canDelete && (
                   <button
-                    onClick={() => deleteFile(attachment.id)}
+                    onClick={() => setDeleteTarget(attachment.id)}
                     disabled={isLoading}
                     className="p-2 text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50"
                     title="Delete"
